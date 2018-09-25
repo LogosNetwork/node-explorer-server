@@ -19,7 +19,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Static routes
 app.use(history())
-app.use(gzipStatic(path.join(__dirname,"/client/dist")))
+app.use(gzipStatic(path.join(__dirname,"/node-explorer-client/dist")))
 app.get('/reset', (req, res) => {
   if (config.environment === "development") {
     models.sequelize.sync({force:true});
