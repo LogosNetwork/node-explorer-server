@@ -98,7 +98,7 @@ const handleRaiCallback = (blk) => {
   let blkType = blk2.type
   let account = blk.account
   console.log(`Acc: ${account} block: ${blkType} hash: ${blk.hash}`)
-  publishBlock(`broadcast/${blk.account}`, blk)
+  publishBlock(`broadcast/${blk.account.replace('xrb_','lgs_')}`, blk)
 }
 
 // Static routes
