@@ -15,7 +15,10 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Dynamic Routes
-//TODO
+app.post('/rpccallback', (req, res) => {
+  console.log(req.body);
+  res.send();
+});
 
 // Static routes
 app.use(history())
