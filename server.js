@@ -20,7 +20,6 @@ app.use(bodyParser.urlencoded({ extended: true }))
 
 // Dynamic Routes
 app.post('/callback', (req, res) => {
-  console.log(req.body)
   handleRaiCallback(req.body)
   res.send()
 })
@@ -40,6 +39,11 @@ const moscaSettings = {
   backend: mqttServerOpts,
   persistence: {
     factory: mosca.persistence.Redis
+  },
+  http: {
+    port: config.mqtt.wsport,
+    bundle: true,
+    static: './'
   }
 }
 
@@ -53,7 +57,7 @@ mqttServer.on('clientConnected', (client) => {
 })
 
 mqttServer.on('published', function(packet, client) {
-  console.log(`Published Topic: ${packet.topic} Payload: ${packet.payload}`)
+  console.log(`Published Topic: ${packet.topic}`)
 })
 
 // MQTT Client
@@ -61,7 +65,7 @@ const broadcastMqttRegex = mqttRegex('broadcast/+account').exec
 const connectMQTT = () => {
   mqttClient = mqtt.connect(config.mqtt.url, config.mqtt.options)
   mqttClient.on('connect', () => {
-    console.log('Connected to MQTT server')
+    // console.log('Connected to MQTT server')
     subscribe()
   })
 
@@ -71,12 +75,12 @@ const connectMQTT = () => {
     if (params) {
       return handleBroadcastBlock(params.account, message)
     }
-    console.log(`No handler for topic ${topic}`)
+    // console.log(`No handler for topic ${topic}`)
   })
 }
 
 const handleBroadcastBlock = (account, message) => {
-  console.log('Broadcast for account ' + account + ' block ' + message)
+  // console.log('Broadcast for account ' + account + ' block ' + message)
 }
 
 let subscribed = false
@@ -89,15 +93,12 @@ const subscribe = () => {
 }
 
 const publishBlock = (topic, payload) => {
-  console.log(`Publish: ${topic} block: ${JSON.stringify(payload)}`)
   mqttClient.publish(topic, JSON.stringify(payload), config.mqtt.block.opts)
 }
 
 const handleRaiCallback = (blk) => {
-  let blk2 = JSON.parse(blk.block)
-  let blkType = blk2.type
-  let account = blk.account
-  console.log(`Acc: ${account} block: ${blkType} hash: ${blk.hash}`)
+  console.log(blk)
+  blk = blk.block
   publishBlock(`broadcast/${blk.account.replace('xrb_','lgs_')}`, blk)
 }
 
