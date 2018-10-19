@@ -20,7 +20,7 @@ app.use(bodyParser.urlencoded({ extended: true }))
 
 // Dynamic Routes
 app.post('/callback', (req, res) => {
-  handleRaiCallback(req.body)
+  handleLogosCallback(req.body)
   res.send()
 })
 
@@ -61,7 +61,7 @@ mqttServer.on('published', function(packet, client) {
 })
 
 // MQTT Client
-const broadcastMqttRegex = mqttRegex('broadcast/+account').exec
+const broadcastMqttRegex = mqttRegex('account/+account').exec
 const connectMQTT = () => {
   mqttClient = mqtt.connect(config.mqtt.url, config.mqtt.options)
   mqttClient.on('connect', () => {
@@ -86,7 +86,7 @@ const handleBroadcastBlock = (account, message) => {
 let subscribed = false
 const subscribe = () => {
   if (!subscribed) {
-    mqttClient.subscribe('broadcast/+') // account number
+    mqttClient.subscribe('account/+') // account number
     console.log('Subscribed to selected topics')
     subscribed = true
   }
@@ -96,10 +96,10 @@ const publishBlock = (topic, payload) => {
   mqttClient.publish(topic, JSON.stringify(payload), config.mqtt.block.opts)
 }
 
-const handleRaiCallback = (blk) => {
-  console.log(blk)
-  blk = blk.block
-  publishBlock(`broadcast/${blk.account.replace('xrb_','lgs_')}`, blk)
+const handleLogosCallback = (blk) => {
+  let myBlock = JSON.parse(blk.block)
+  myBlock.hash = blk.hash
+  publishBlock(`account/${myBlock.account.replace('xrb_','lgs_')}`, myBlock)
 }
 
 // Static routes
