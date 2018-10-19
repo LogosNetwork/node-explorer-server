@@ -99,7 +99,10 @@ const publishBlock = (topic, payload) => {
 const handleLogosCallback = (blk) => {
   let myBlock = JSON.parse(blk.block)
   myBlock.hash = blk.hash
+  // Publish to Sender
   publishBlock(`account/${myBlock.account.replace('xrb_','lgs_')}`, myBlock)
+  // Publish to Receiver
+  publishBlock(`account/${myBlock.link_as_account.replace('xrb_','lgs_')}`, myBlock)
 }
 
 // Static routes
