@@ -96,15 +96,16 @@ const publishBlock = (topic, payload) => {
   mqttClient.publish(topic, JSON.stringify(payload), config.mqtt.block.opts)
 }
 
-const handleLogosCallback = (blk) => {
-  let myBlock = JSON.parse(blk.block)
-  myBlock.hash = blk.hash
-  // Publish to Sender
-  myBlock.type = 'send'
-  publishBlock(`account/${myBlock.account.replace('xrb_','lgs_')}`, myBlock)
-  // Publish to Receiver
-  myBlock.type = 'receive'
-  publishBlock(`account/${myBlock.link_as_account.replace('xrb_','lgs_')}`, myBlock)
+const handleLogosCallback = (blks) => {
+  for (let blk of blks.blocks) {
+    blk.block.hash = blk.hash
+    // Publish to Sender
+    blk.block.type = 'send'
+    publishBlock(`account/${blk.block.account.replace('xrb_','lgs_')}`, blk.block)
+    // Publish to Receiver
+    blk.block.type = 'receive'
+    publishBlock(`account/${blk.block.link_as_account.replace('xrb_','lgs_')}`, blk.block)
+  }
 }
 
 // Static routes
