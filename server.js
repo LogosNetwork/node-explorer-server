@@ -13,7 +13,7 @@ const redis = require('redis')
 const mosca = require('mosca')
 const mqtt = require('mqtt')
 const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
-
+const hash = require('./util/hash.js')
 // Application config
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -96,15 +96,23 @@ const publishBlock = (topic, payload) => {
   mqttClient.publish(topic, JSON.stringify(payload), config.mqtt.block.opts)
 }
 
-const handleLogosCallback = (blks) => {
-  for (let blk of blks.blocks) {
-    blk.block.hash = blk.hash
-    // Publish to Sender
-    blk.block.type = 'send'
-    publishBlock(`account/${blk.block.account.replace('xrb_','lgs_')}`, blk.block)
-    // Publish to Receiver
-    blk.block.type = 'receive'
-    publishBlock(`account/${blk.block.link_as_account.replace('xrb_','lgs_')}`, blk.block)
+const handleLogosCallback = (block) => {
+  if (block.blocks) {
+    publishBlock(`batchStateBlock`, block)
+    for (let transaction of block.blocks) {
+      transaction.hash = hash.get(transaction)
+      console.log(transaction.hash)
+      // Publish to Sender
+      transaction.type = 'send'
+      publishBlock(`account/${blk.block.account.replace('xrb_','lgs_')}`, blk.block)
+      // Publish to Receiver
+      transaction.type = 'receive'
+      publishBlock(`account/${blk.block.link_as_account.replace('xrb_','lgs_')}`, blk.block)
+    }
+  } else if (block.micro_block_number) {
+    publishBlock(`microEpoch`, block)
+  } else {
+    publishBlock(`epoch`, block)
   }
 }
 
