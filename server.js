@@ -104,10 +104,10 @@ const handleLogosCallback = (block) => {
       console.log(transaction.hash)
       // Publish to Sender
       transaction.type = 'send'
-      publishBlock(`account/${blk.block.account.replace('xrb_','lgs_')}`, blk.block)
+      publishBlock(`account/${transaction.account.replace('xrb_','lgs_')}`, transaction)
       // Publish to Receiver
       transaction.type = 'receive'
-      publishBlock(`account/${blk.block.link_as_account.replace('xrb_','lgs_')}`, blk.block)
+      publishBlock(`account/${transaction.link_as_account.replace('xrb_','lgs_')}`, transaction)
     }
   } else if (block.micro_block_number) {
     publishBlock(`microEpoch`, block)
