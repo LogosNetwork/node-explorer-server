@@ -1,4 +1,5 @@
 const blake = require('blakejs');
+const nanoBase32 = require('nano-base32');
 const STATE_BLOCK_PREAMBLE = '0000000000000000000000000000000000000000000000000000000000000006';
 
 uint8_hex = (uint8) => {
