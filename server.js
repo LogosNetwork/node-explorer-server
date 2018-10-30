@@ -98,10 +98,9 @@ const publishBlock = (topic, payload) => {
 
 const handleLogosCallback = (block) => {
   if (block.blocks) {
-    publishBlock(`batchStateBlock`, block)
+    publishBlock(`batchBlock`, block)
     for (let transaction of block.blocks) {
       transaction.hash = hash.get(transaction)
-      console.log(transaction.hash)
       // Publish to Sender
       transaction.type = 'send'
       publishBlock(`account/${transaction.account.replace('xrb_','lgs_')}`, transaction)
