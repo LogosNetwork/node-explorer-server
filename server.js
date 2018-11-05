@@ -12,6 +12,7 @@ const history = require('connect-history-api-fallback')
 const redis = require('redis')
 const mosca = require('mosca')
 const mqtt = require('mqtt')
+const blocks = require('./services/blocks')
 const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
 const hash = require('./util/hash.js')
 // Application config
@@ -99,18 +100,31 @@ const publishBlock = (topic, payload) => {
 const handleLogosCallback = (block) => {
   if (block.blocks) {
     publishBlock(`batchBlock`, block)
+    blocks.createBatchBlock(block).then((batchBlock) => {
+      console.log(batchBlock)
+    }).catch((err) => {
+      console.log(err)
+    })
     for (let transaction of block.blocks) {
       transaction.hash = hash.get(transaction)
-      // Publish to Sender
       transaction.type = 'send'
       publishBlock(`account/${transaction.account.replace('xrb_','lgs_')}`, transaction)
-      // Publish to Receiver
       transaction.type = 'receive'
       publishBlock(`account/${transaction.link_as_account.replace('xrb_','lgs_')}`, transaction)
     }
   } else if (block.micro_block_number) {
+    blocks.createMicroEpoch(block).then((mircoEpoch) => {
+      console.log(mircoEpoch)
+    }).catch((err) => {
+      console.log(err)
+    })
     publishBlock(`microEpoch`, block)
   } else {
+    blocks.createEpoch(block).then((epoch) => {
+      console.log(epoch)
+    }).catch((err) => {
+      console.log(err)
+    })
     publishBlock(`epoch`, block)
   }
 }
