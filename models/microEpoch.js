@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
         require: true
       },
       last_micro_block: {
-        type: DataType.STRING,
+        type: DataTypes.STRING,
         require: true
       },
       signature: {

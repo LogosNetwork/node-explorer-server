@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
         require: true
       },
       transaction_fee_pool: {
-        type: DataType.STRING,
+        type: DataTypes.STRING,
         require: true
       },
       signature: {
