@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const blocks = sequelize.define('blocks', {
+    const microEpoch = sequelize.define('microEpoch', {
       hash: {
         type: DataTypes.STRING,
         primaryKey: true
@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BIGINT,
         require: true
       },
-      account: {
+      delegate: {
         type: DataTypes.STRING,
         require: true
       },
@@ -16,36 +16,28 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         require: true
       },
-      representative: {
+      epoch_number: {
         type: DataTypes.STRING,
         require: true
       },
-      amount: {
+      micro_block_number: {
         type: DataTypes.STRING,
         require: true
       },
-      link: {
+      number_batch_blocks: {
         type: DataTypes.STRING,
         require: true
       },
-      link_as_account: {
-        type: DataTypes.STRING,
-        require: true
-      },
-      work: {
-        type: DataTypes.STRING,
+      last_micro_block: {
+        type: DataType.STRING,
         require: true
       },
       signature: {
         type: DataTypes.STRING,
         require: true
-      },
-      type: {
-        type: DataTypes.STRING,
-        require: true
       }
     }, {
       freezeTableName: true
-    });
-    return blocks;
-  };
+    })
+    return microEpoch
+  }

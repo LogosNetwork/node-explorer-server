@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const batchStateBlocks = sequelize.define('batchStateBlocks', {
+    const batchBlocks = sequelize.define('batchBlocks', {
       hash: {
         type: DataTypes.STRING,
         primaryKey: true
@@ -22,6 +22,6 @@ module.exports = (sequelize, DataTypes) => {
       }
     }, {
       freezeTableName: true
-    });
-    return batchStateBlocks;
-  };
+    })
+    return batchBlocks
+  }
