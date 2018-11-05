@@ -98,6 +98,7 @@ const publishBlock = (topic, payload) => {
 }
 
 const handleLogosCallback = (block) => {
+  console.log(block)
   if (block.blocks) {
     publishBlock(`batchBlock`, block)
     blocks.createBatchBlock(block).then((batchBlock) => {
@@ -108,9 +109,9 @@ const handleLogosCallback = (block) => {
     for (let transaction of block.blocks) {
       transaction.hash = hash.get(transaction)
       transaction.type = 'send'
-      publishBlock(`account/${transaction.account.replace('xrb_','lgs_')}`, transaction)
+      publishBlock(`account/${transaction.account}`, transaction)
       transaction.type = 'receive'
-      publishBlock(`account/${transaction.link_as_account.replace('xrb_','lgs_')}`, transaction)
+      publishBlock(`account/${transaction.link_as_account}`, transaction)
     }
   } else if (block.micro_block_number) {
     blocks.createMicroEpoch(block).then((mircoEpoch) => {
