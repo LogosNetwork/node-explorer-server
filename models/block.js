@@ -1,5 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
-    const blocks = sequelize.define('blocks', {
+    const block = sequelize.define('block', {
       hash: {
         type: DataTypes.STRING,
         primaryKey: true
@@ -47,5 +47,5 @@ module.exports = (sequelize, DataTypes) => {
     }, {
       freezeTableName: true
     })
-    return blocks
+    return block
   }
