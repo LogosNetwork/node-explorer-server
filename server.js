@@ -198,7 +198,7 @@ const configureSignals = () => {
 }
 
 //Database
-models.batchBlocks.hasMany(models.blocks)
+models.batchBlock.hasMany(models.block)
 models.sequelize.sync().then(() => {
   configureSignals()
   connectMQTT()
