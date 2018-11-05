@@ -98,10 +98,10 @@ const publishBlock = (topic, payload) => {
 }
 
 const handleLogosCallback = (block) => {
-  console.log(block)
   if (block.blocks) {
     publishBlock(`batchBlock`, block)
     blocks.createBatchBlock(block).then((batchBlock) => {
+      console.log('created batch block')
       console.log(batchBlock)
     }).catch((err) => {
       console.log(err)
@@ -115,6 +115,7 @@ const handleLogosCallback = (block) => {
     }
   } else if (block.micro_block_number) {
     blocks.createMicroEpoch(block).then((mircoEpoch) => {
+      console.log('created micro epoch')
       console.log(mircoEpoch)
     }).catch((err) => {
       console.log(err)
@@ -122,6 +123,7 @@ const handleLogosCallback = (block) => {
     publishBlock(`microEpoch`, block)
   } else {
     blocks.createEpoch(block).then((epoch) => {
+      console.log('created epoch')
       console.log(epoch)
     }).catch((err) => {
       console.log(err)
