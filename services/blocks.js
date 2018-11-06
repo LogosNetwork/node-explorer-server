@@ -50,4 +50,32 @@ methods.createEpoch = (data) => {
   })
 }
 
+methods.findAllTransactions = (data) => {
+  return new Promise((resolve, reject) => {
+    if (!data.page || data.page === null) {
+      data.page = 0
+    }
+    if (!data.hash || data.hash === null) {
+      data.hash = ""
+    }
+    models.block
+      .findAll(
+        {
+          offset:data.page*50,
+          limit:50,
+          where: {
+            hash: {
+              [Op.like]: '%'+data.hash+'%'
+            }
+          }
+        }
+      )
+      .then((blocks) => {
+        if (!blocks) { return reject('Could not get any blocks') }
+        resolve(blocks)
+      })
+      .catch((err) => { return reject(err) })
+  })
+}
+
 module.exports = methods

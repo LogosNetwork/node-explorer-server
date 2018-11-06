@@ -13,6 +13,7 @@ const redis = require('redis')
 const mosca = require('mosca')
 const mqtt = require('mqtt')
 const blocks = require('./services/blocks')
+const blockRoutes = require('./routes/blocks')
 const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
 const hash = require('./util/hash.js')
 // Application config
@@ -42,6 +43,7 @@ app.get('/reset', (req, res) => {
       })
   }
 })
+app.use('/blocks', blockRoutes)
 
 //MQTT SERVER
 const mqttServerOpts = {
