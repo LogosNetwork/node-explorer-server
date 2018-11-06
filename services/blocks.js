@@ -1,5 +1,7 @@
 let methods = {}
 const models = require('../models')
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
 
 methods.createBatchBlock = (data) => {
   return new Promise((resolve, reject) => {

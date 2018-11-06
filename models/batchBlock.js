@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true
       },
       timestamp: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.STRING,
         require: true
       },
       previous: {
@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
         require: true
       },
       block_count: {
-        type: DataTypes.SMALLINT,
+        type: DataTypes.STRING,
         require: true
       },
       signature: {

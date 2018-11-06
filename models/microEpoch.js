@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true
       },
       timestamp: {
-        type: DataTypes.BIGINT,
+        type: DataTypes.STRING,
         require: true
       },
       delegate: {

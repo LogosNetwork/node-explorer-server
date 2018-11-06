@@ -10,9 +10,9 @@ router.get('/transactions', (req, res) => {
         .status(200)
         .json({
           'status': 'SUCCESS',
-          'message': 'Successfully found the aliases',
+          'message': 'Successfully found the transactions',
           'data': {
-            'blocks': results
+            'transactions': results
           }
         })
     })
