@@ -103,16 +103,23 @@ const handleLogosCallback = (block) => {
     blocks.createBatchBlock(block).then((batchBlock) => {
       console.log('created batch block')
       console.log(batchBlock)
+      for (let transaction of block.blocks) {
+        transaction.batchBlock = block.hash
+        transaction.hash = hash.get(transaction)
+        transaction.type = 'send'
+        publishBlock(`account/${transaction.account}`, transaction)
+        transaction.type = 'receive'
+        publishBlock(`account/${transaction.link_as_account}`, transaction)
+        blocks.createBatchBlock(transaction).then((dbBlock) => {
+          console.log('created block')
+          console.log(dbBlock)
+        }).catch((err) => {
+          console.log(err)
+        })
+      }
     }).catch((err) => {
       console.log(err)
     })
-    for (let transaction of block.blocks) {
-      transaction.hash = hash.get(transaction)
-      transaction.type = 'send'
-      publishBlock(`account/${transaction.account}`, transaction)
-      transaction.type = 'receive'
-      publishBlock(`account/${transaction.link_as_account}`, transaction)
-    }
   } else if (block.micro_block_number) {
     blocks.createMicroEpoch(block).then((mircoEpoch) => {
       console.log('created micro epoch')

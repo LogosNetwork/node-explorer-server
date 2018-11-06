@@ -39,10 +39,6 @@ module.exports = (sequelize, DataTypes) => {
       signature: {
         type: DataTypes.STRING,
         require: true
-      },
-      type: {
-        type: DataTypes.STRING,
-        require: true
       }
     }, {
       freezeTableName: true
