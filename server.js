@@ -104,7 +104,7 @@ const handleLogosCallback = (block) => {
       console.log('created batch block')
       console.log(batchBlock)
       for (let transaction of block.blocks) {
-        transaction.batchBlock = block.hash
+        transaction.batchBlockHash = block.hash
         transaction.hash = hash.get(transaction)
         transaction.type = 'receive'
         publishBlock(`account/${transaction.link_as_account}`, transaction)
