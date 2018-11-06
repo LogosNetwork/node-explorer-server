@@ -63,6 +63,9 @@ methods.findAllTransactions = (data) => {
     models.block
       .findAll(
         {
+          order: [
+            ['createdAt', 'DESC']
+          ],
           offset:data.page*50,
           limit:50,
           where: {
