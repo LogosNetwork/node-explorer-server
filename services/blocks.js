@@ -13,6 +13,18 @@ methods.createBatchBlock = (data) => {
       })
   })
 }
+methods.createBlock = (data) => {
+  return new Promise((resolve, reject) => {
+    models.block
+      .create(data)
+      .then((block) => {
+        resolve(block.dataValues)
+      })
+      .catch((err) => {
+        reject(err)
+      })
+  })
+}
 methods.createMicroEpoch = (data) => {
   return new Promise((resolve, reject) => {
     models.microEpoch
