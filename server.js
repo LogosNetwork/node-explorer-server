@@ -24,6 +24,24 @@ app.post('/callback', (req, res) => {
   handleLogosCallback(req.body)
   res.send()
 })
+app.get('/reset', (req, res) => {
+  if (config.environment === "development") {
+    models.sequelize.sync({force:true})
+    res
+      .status(200)
+      .json({
+        'status': 'SUCCESS',
+        'message': 'Successfully cleared database'
+      })
+  } else {
+    res
+      .status(403)
+      .json({
+        'status': 'ERROR',
+        'message': 'Database reset is only available on development!'
+      })
+  }
+})
 
 //MQTT SERVER
 const mqttServerOpts = {
@@ -101,8 +119,6 @@ const handleLogosCallback = (block) => {
   if (block.blocks) {
     publishBlock(`batchBlock`, block)
     blocks.createBatchBlock(block).then((batchBlock) => {
-      console.log('created batch block')
-      console.log(batchBlock)
       for (let transaction of block.blocks) {
         transaction.batchBlockHash = block.hash
         transaction.hash = hash.get(transaction)
@@ -111,8 +127,6 @@ const handleLogosCallback = (block) => {
         transaction.type = 'send'
         publishBlock(`account/${transaction.account}`, transaction)
         blocks.createBlock(transaction).then((dbBlock) => {
-          console.log('created block')
-          console.log(dbBlock)
         }).catch((err) => {
           console.log(err)
         })
@@ -122,16 +136,12 @@ const handleLogosCallback = (block) => {
     })
   } else if (block.micro_block_number) {
     blocks.createMicroEpoch(block).then((mircoEpoch) => {
-      console.log('created micro epoch')
-      console.log(mircoEpoch)
     }).catch((err) => {
       console.log(err)
     })
     publishBlock(`microEpoch`, block)
   } else {
     blocks.createEpoch(block).then((epoch) => {
-      console.log('created epoch')
-      console.log(epoch)
     }).catch((err) => {
       console.log(err)
     })
@@ -141,24 +151,6 @@ const handleLogosCallback = (block) => {
 
 // Static routes
 app.use(history())
-app.get('/reset', (req, res) => {
-  if (config.environment === "development") {
-    models.sequelize.sync({force:true})
-    res
-      .status(200)
-      .json({
-        'status': 'SUCCESS',
-        'message': 'Successfully cleared database'
-      })
-  } else {
-    res
-      .status(403)
-      .json({
-        'status': 'ERROR',
-        'message': 'Database reset is only available on development!'
-      })
-  }
-})
 app.use(gzipStatic(path.join(__dirname,"/node-explorer-client/dist")))
 
 //Debug Logging
