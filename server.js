@@ -90,14 +90,21 @@ const moscaSettings = {
   backend: mqttServerOpts,
   persistence: {
     factory: mosca.persistence.Redis
-  },
-  http: {
+  }
+}
+if (config.environment === "development") {
+  moscaSettings.http = {
     port: config.mqtt.wsport,
     bundle: true,
     static: './'
-  },
-  secure: {
+  }
+} else {
+  moscaSettings.https = {
     port: config.mqtt.wssport,
+    bundle: true,
+    static: './'
+  }
+  moscaSettings.secure = {
     keyPath: SECURE_KEY,
     certPath: SECURE_CERT
   }
