@@ -93,6 +93,11 @@ const moscaSettings = {
     port: config.mqtt.wsport,
     bundle: true,
     static: './'
+  },
+  https: {
+    port: config.mqtt.wssport,
+    bundle: true,
+    static: './'
   }
 }
 
