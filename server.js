@@ -14,6 +14,8 @@ const mosca = require('mosca')
 const mqtt = require('mqtt')
 const blocks = require('./services/blocks')
 const blockRoutes = require('./routes/blocks')
+const jwt = require('jsonwebtoken')
+const fs = require('fs')
 const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
 const hash = require('./util/hash.js')
 // Application config
@@ -24,6 +26,32 @@ app.use(bodyParser.urlencoded({ extended: true }))
 app.post('/callback', (req, res) => {
   handleLogosCallback(req.body)
   res.send()
+})
+app.post('/password', (req, res) => {
+  if (req.body.password && req.body.password === "locoforlogos") {
+    let cert = fs.readFileSync('jwtRS256.key')
+    jwt.sign({}, cert, { algorithm: 'RS256'}, (err, token) => {
+      res.send({
+        token:token
+      })
+    })
+  }
+})
+app.post('/verify', (req, res) => {
+  if (req.body.token) {
+    let cert = fs.readFileSync('jwtRS256.key.pub');
+    jwt.verify(req.body.token, cert, { algorithms: ['RS256'] }, (err, payload) => {
+      if (err) {
+        res.send({
+          authenticated:false
+        })
+      } else {
+        res.send({
+          authenticated:true
+        })
+      }
+    });
+  }
 })
 app.get('/reset', (req, res) => {
   if (config.environment === "development") {
