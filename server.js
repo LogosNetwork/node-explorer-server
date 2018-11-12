@@ -83,6 +83,8 @@ const mqttServerOpts = {
   host: "localhost"
 }
 
+const SECURE_KEY = __dirname + '/keys/tls-key.pem';
+const SECURE_CERT = __dirname + '/keys/tls-cert.pem';
 const moscaSettings = {
   port: 1883,
   backend: mqttServerOpts,
@@ -94,10 +96,10 @@ const moscaSettings = {
     bundle: true,
     static: './'
   },
-  https: {
+  secure: {
     port: config.mqtt.wssport,
-    bundle: true,
-    static: './'
+    keyPath: SECURE_KEY,
+    certPath: SECURE_CERT
   }
 }
 
