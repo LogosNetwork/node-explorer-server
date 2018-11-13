@@ -84,7 +84,7 @@ const mqttServerOpts = {
 }
 
 const moscaSettings = {
-  port: 1883,
+  port: config.mqtt.port,
   backend: mqttServerOpts,
   persistence: {
     factory: mosca.persistence.Redis
@@ -109,7 +109,7 @@ if (config.environment === "production") {
     static: './'
   }
   moscaSettings.secure = {
-    port: config.mqtt.wssport,
+    port: config.mqtt.securePort,
     keyPath: SECURE_KEY,
     certPath: SECURE_CERT
   }
