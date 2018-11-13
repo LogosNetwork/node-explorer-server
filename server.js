@@ -82,7 +82,8 @@ const mqttServerOpts = {
   return_buffers: true,
   host: "localhost"
 }
-
+const SECURE_KEY = config.keyPath;
+const SECURE_CERT = config.certPath;
 const moscaSettings = {
   port: 1883,
   backend: mqttServerOpts,
@@ -90,19 +91,17 @@ const moscaSettings = {
     factory: mosca.persistence.Redis
   },
   logger: {
-    name: "secureExample",
+    name: "secure",
     level: 40,
-  }
-}
-if (config.environment === "development") {
-  moscaSettings.http = {
+  },
+  http: {
     port: config.mqtt.wsport,
     bundle: true,
     static: './'
   }
-} else {
-  const SECURE_KEY = config.keyPath;
-  const SECURE_CERT = config.certPath;
+}
+
+if (config.environment === "production") {
   moscaSettings.secure = {
     port: config.mqtt.wssport,
     keyPath: SECURE_KEY,
