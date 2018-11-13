@@ -126,9 +126,9 @@ mqttServer.on('published', function(packet, client) {
 // MQTT Client
 const broadcastMqttRegex = mqttRegex('account/+account').exec
 const connectMQTT = () => {
-  mqttClient = mqtt.connect(config.mqtt.url, config.mqtt.options)
+  mqttClient = mqtt.connect('wss://pla.bs:8000', {rejectUnauthorized: false})
   mqttClient.on('connect', () => {
-    // console.log('Connected to MQTT server')
+    console.log('Connected to MQTT server')
     subscribe()
   })
 
