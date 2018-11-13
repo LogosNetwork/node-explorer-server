@@ -82,8 +82,7 @@ const mqttServerOpts = {
   return_buffers: true,
   host: "localhost"
 }
-const SECURE_KEY = config.keyPath;
-const SECURE_CERT = config.certPath;
+
 const moscaSettings = {
   port: 1883,
   backend: mqttServerOpts,
@@ -102,6 +101,13 @@ const moscaSettings = {
 }
 
 if (config.environment === "production") {
+  const SECURE_KEY = config.keyPath;
+  const SECURE_CERT = config.certPath;
+  moscaSettings.https = {
+    port: config.mqtt.wssport,
+    bundle: true,
+    static: './'
+  }
   moscaSettings.secure = {
     port: config.mqtt.wssport,
     keyPath: SECURE_KEY,
@@ -125,7 +131,7 @@ mqttServer.on('published', function(packet, client) {
 // MQTT Client
 const broadcastMqttRegex = mqttRegex('account/+account').exec
 const connectMQTT = () => {
-  mqttClient = mqtt.connect('wss://pla.bs:8000', {rejectUnauthorized: false})
+  mqttClient = mqtt.connect(config.mqtt.url, config.mqtt.options)
   mqttClient.on('connect', () => {
     console.log('Connected to MQTT server')
     subscribe()
