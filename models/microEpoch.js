@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         require: true
       },
-      delegate: {
+      account: {
         type: DataTypes.STRING,
         require: true
       },
@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         require: true
       },
-      micro_block_number: {
+      sequence: {
         type: DataTypes.STRING,
         require: true
       },
