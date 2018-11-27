@@ -17,6 +17,8 @@
   },
   "homepage": "",
   "dependencies": {
+    "@logosnetwork/logos-rpc-client": "^1.0.26",
+    "big-integer": "^1.6.36",
     "blakejs": "^1.1.0",
     "colog": "^1.0.4",
     "connect-gzip-static": "^2.1.1",

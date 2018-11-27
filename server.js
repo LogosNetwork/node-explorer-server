@@ -45,24 +45,22 @@ app.post('/faucet', (req, res) => {
   if (req.body.address) {
     RPC.account(privateKey).info().then((val) => {
       let logosAmount = 0
-      let bal = bigInt(val.balance).multiply(0.0001)
-      bal = RPC.convert.fromReason(bal, 'LOGOS')
-      console.log(bal.toString())
-      if (bal.greater(1000)) {
+      let bal = bigInt(val.balance).divide(10000)
+      bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
+      if (bal > (1000)) {
         logosAmount = 1000
       } else {
         logosAmount = Number(bal).toFixed(5)
       }
-      console.log(logosAmount)
-      RPC.account(privateKey).send(logosAmount, address).then((val) => {
-        res.send(val)
+      RPC.account(privateKey).send(logosAmount, req.body.address).then((val) => {
+        res.send(`Faucet has sent ${logosAmount} to ${req.body.address}`)
       })
     })
   }
 })
 app.post('/verify', (req, res) => {
   if (req.body.token) {
-    let cert = fs.readFileSync('jwtRS256.key.pub');
+    let cert = fs.readFileSync('jwtRS256.key.pub')
     jwt.verify(req.body.token, cert, { algorithms: ['RS256'] }, (err, payload) => {
       if (err) {
         res.send({
@@ -73,7 +71,7 @@ app.post('/verify', (req, res) => {
           authenticated:true
         })
       }
-    });
+    })
   }
 })
 app.get('/reset', (req, res) => {
@@ -124,8 +122,8 @@ const moscaSettings = {
 }
 
 if (config.environment === "production") {
-  const SECURE_KEY = config.keyPath;
-  const SECURE_CERT = config.certPath;
+  const SECURE_KEY = config.keyPath
+  const SECURE_CERT = config.certPath
   moscaSettings.https = {
     port: config.mqtt.wssport,
     bundle: true,
