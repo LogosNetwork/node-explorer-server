@@ -16,8 +16,12 @@ const blocks = require('./services/blocks')
 const blockRoutes = require('./routes/blocks')
 const jwt = require('jsonwebtoken')
 const fs = require('fs')
+const Logos = require('@logosnetwork/logos-rpc-client')
+const RPC = new Logos({ url: 'http://34.230.59.175:55000', debug: true })
+const bigInt = require('big-integer')
 const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
 const hash = require('./util/hash.js')
+const privateKey = config.faucetPrivateKey
 // Application config
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -33,6 +37,25 @@ app.post('/password', (req, res) => {
     jwt.sign({}, cert, { algorithm: 'RS256'}, (err, token) => {
       res.send({
         token:token
+      })
+    })
+  }
+})
+app.post('/faucet', (req, res) => {
+  if (req.body.address) {
+    RPC.account(privateKey).info().then((val) => {
+      let logosAmount = 0
+      let bal = bigInt(val.balance).multiply(0.0001)
+      bal = RPC.convert.fromReason(bal, 'LOGOS')
+      console.log(bal.toString())
+      if (bal.greater(1000)) {
+        logosAmount = 1000
+      } else {
+        logosAmount = Number(bal).toFixed(5)
+      }
+      console.log(logosAmount)
+      RPC.account(privateKey).send(logosAmount, address).then((val) => {
+        res.send(val)
       })
     })
   }
