@@ -85,6 +85,7 @@ get = (transaction) => {
     blake.blake2bUpdate(context, hex_uint8(transaction.previous))
     blake.blake2bUpdate(context, hex_uint8(keyFromAccount(transaction.representative)))
     blake.blake2bUpdate(context, hex_uint8(dec2hex(transaction.amount, 16)))
+    blake.blake2bUpdate(context, hex_uint8(dec2hex(transaction.transaction_fee, 16)))
     blake.blake2bUpdate(context, hex_uint8(transaction.link))
     return uint8_hex(blake.blake2bFinal(context))
 }
