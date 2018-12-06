@@ -48,20 +48,26 @@ app.post('/password', (req, res) => {
     })
   }
 })
-app.post('/faucet', (req, res) => {
+app.post('/faucet', async (req, res) => {
   if (req.body.address) {
-    RPC.account(privateKey).info().then((val) => {
-      let logosAmount = 0
-      let bal = bigInt(val.balance).divide(10000)
-      bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
-      if (bal > (1000)) {
-        logosAmount = 1000
-      } else {
-        logosAmount = Number(bal).toFixed(5)
-      }
-      RPC.account(privateKey).send(logosAmount, req.body.address).then((val) => {
-        res.send(`Faucet has sent ${logosAmount} to ${req.body.address}`)
-      })
+    let val = await RPC.account(privateKey).info()
+    let delegateId = null
+    if (val.frontier === '0000000000000000000000000000000000000000000000000000000000000000') {
+      delegateId = parseInt(val.frontier.slice(-2), 16) % 32
+    } else {
+      delegateId = parseInt(val.key.slice(-2), 16) % 32
+    }
+    RPC.changeServer(`http://${config.delegates[delegateId]}:55000`)
+    let logosAmount = 0
+    let bal = bigInt(val.balance).divide(10000)
+    bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
+    if (bal > (1000)) {
+      logosAmount = 1000
+    } else {
+      logosAmount = Number(bal).toFixed(5)
+    }
+    RPC.account(privateKey).send(logosAmount, req.body.address).then((val) => {
+      res.send(`Faucet has sent ${logosAmount} to ${req.body.address}`)
     })
   }
 })
