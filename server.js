@@ -52,7 +52,7 @@ let shouldAbort = function () {
   return new Promise(resolve => {
     let results = []
     for (let i = 0; i < Object.keys(config.delegates).length; i++) {
-      RPC.changeServer(`http://${config.delegates[delegateId]}:55000`)
+      RPC.changeServer(`http://${config.delegates[i]}:55000`)
       RPC.accounts.info(config.accountID)
         .then(val => {
           results.push(val.frontier)
@@ -75,7 +75,7 @@ app.post('/faucet', async (req, res) => {
       if (val.frontier === '0000000000000000000000000000000000000000000000000000000000000000') {
         delegateId = parseInt(val.frontier.slice(-2), 16) % 32
       } else {
-        delegateId = parseInt(val.key.slice(-2), 16) % 32
+        delegateId = parseInt(config.accountKey.slice(-2), 16) % 32
       }
       RPC.changeServer(`http://${config.delegates[delegateId]}:55000`)
       let logosAmount = 0
@@ -87,6 +87,7 @@ app.post('/faucet', async (req, res) => {
         logosAmount = Number(bal).toFixed(5)
       }
       RPC.account(privateKey).send(logosAmount, req.body.address).then((val) => {
+        console.log(val)
         res.send(`Faucet has sent ${logosAmount} to ${req.body.address}`)
       })
     }
