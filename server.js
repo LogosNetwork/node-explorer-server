@@ -7,6 +7,7 @@ const colog = require('colog')
 const path = require('path')
 const moment = require('moment')
 const models = require('./models')
+const axios = require('axios')
 const gzipStatic = require('connect-gzip-static')
 const history = require('connect-history-api-fallback')
 const redis = require('redis')
@@ -31,6 +32,14 @@ app.post('/callback', (req, res) => {
   handleLogosCallback(req.body)
   res.send()
 })
+app.post('/rpc', (req, res) => {
+  console.log(req.body)
+  axios.post(req.body.targetURL, req.body)
+  .then((val) => {
+    console.log(val)
+    res.send(val)
+  })
+});
 app.post('/password', (req, res) => {
   if (req.body.password && req.body.password === "locoforlogos") {
     let cert = fs.readFileSync('jwtRS256.key')

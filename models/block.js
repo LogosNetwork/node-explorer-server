@@ -24,6 +24,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         require: true
       },
+      transaction_fee: {
+        type: DataTypes.STRING,
+        require: true
+      },
       link: {
         type: DataTypes.STRING,
         require: true
