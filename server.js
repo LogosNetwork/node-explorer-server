@@ -32,13 +32,11 @@ app.post('/callback', (req, res) => {
   handleLogosCallback(req.body)
   res.send()
 })
-app.post('/rpc', (req, res) => {
-  console.log(req.body)
-  axios.post(req.body.targetURL, req.body)
-  .then((val) => {
-    console.log(val)
-    res.send(val)
-  })
+app.post('/rpc', async (req, res) => {
+  let targetURL = req.body.targetURL
+  delete req.body.targetURL
+  const response = await axios.post(`${targetURL}/`, req.body)
+  res.send(response.data)
 });
 app.post('/password', (req, res) => {
   if (req.body.password && req.body.password === "locoforlogos") {
