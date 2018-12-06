@@ -48,27 +48,49 @@ app.post('/password', (req, res) => {
     })
   }
 })
+let shouldAbort = function () {
+  return new Promise(resolve => {
+    let results = []
+    for (let i = 0; i < Object.keys(config.delegates).length; i++) {
+      RPC.changeServer(`http://${config.delegates[delegateId]}:55000`)
+      RPC.accounts.info(config.accountID)
+        .then(val => {
+          results.push(val.frontier)
+          if (results.length === 32) {
+            let status = results.every((val, i, arr) => val === arr[0])
+            resolve(!status)
+          }
+        })
+    }
+  })
+}
 app.post('/faucet', async (req, res) => {
   if (req.body.address) {
-    let val = await RPC.account(privateKey).info()
-    let delegateId = null
-    if (val.frontier === '0000000000000000000000000000000000000000000000000000000000000000') {
-      delegateId = parseInt(val.frontier.slice(-2), 16) % 32
+    let abort = await shouldAbort()
+    if (abort) {
+      res.send('Faucet encountered and error please try again!')
     } else {
-      delegateId = parseInt(val.key.slice(-2), 16) % 32
+      let val = await RPC.account(privateKey).info()
+      let delegateId = null
+      if (val.frontier === '0000000000000000000000000000000000000000000000000000000000000000') {
+        delegateId = parseInt(val.frontier.slice(-2), 16) % 32
+      } else {
+        delegateId = parseInt(val.key.slice(-2), 16) % 32
+      }
+      RPC.changeServer(`http://${config.delegates[delegateId]}:55000`)
+      let logosAmount = 0
+      let bal = bigInt(val.balance).divide(10000)
+      bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
+      if (bal > (1000)) {
+        logosAmount = 1000
+      } else {
+        logosAmount = Number(bal).toFixed(5)
+      }
+      RPC.account(privateKey).send(logosAmount, req.body.address).then((val) => {
+        res.send(`Faucet has sent ${logosAmount} to ${req.body.address}`)
+      })
     }
-    RPC.changeServer(`http://${config.delegates[delegateId]}:55000`)
-    let logosAmount = 0
-    let bal = bigInt(val.balance).divide(10000)
-    bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
-    if (bal > (1000)) {
-      logosAmount = 1000
-    } else {
-      logosAmount = Number(bal).toFixed(5)
-    }
-    RPC.account(privateKey).send(logosAmount, req.body.address).then((val) => {
-      res.send(`Faucet has sent ${logosAmount} to ${req.body.address}`)
-    })
+
   }
 })
 app.post('/verify', (req, res) => {
