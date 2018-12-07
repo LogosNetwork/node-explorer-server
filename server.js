@@ -87,7 +87,10 @@ app.post('/faucet', async (req, res) => {
         logosAmount = Number(bal).toFixed(5)
       }
       RPC.account(privateKey).send(logosAmount, req.body.address).then((val) => {
-        res.send(`Faucet has sent ${logosAmount} to ${req.body.address}`)
+        res.send({
+          msg:`Faucet has sent ${logosAmount} to ${req.body.address}`,
+          hash: val.hash
+        })
       })
     }
 
