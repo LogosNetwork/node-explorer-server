@@ -17,7 +17,7 @@
   },
   "homepage": "",
   "dependencies": {
-    "@logosnetwork/logos-rpc-client": "^1.0.29",
+    "@logosnetwork/logos-rpc-client": "^1.0.31",
     "axios": "^0.18.0",
     "big-integer": "^1.6.36",
     "blakejs": "^1.1.0",
