@@ -228,6 +228,7 @@ const handleLogosCallback = (block) => {
   if (block.blocks) {
     console.log('Creating Batch Block')
     blocks.createBatchBlock(block).then((batchBlock) => {
+      console.log(`Success: Created Batch Block ${block.hash }`)
       publishBlock(`batchBlock`, block)
       for (let transaction of block.blocks) {
         transaction.batchBlockHash = block.hash
@@ -246,16 +247,16 @@ const handleLogosCallback = (block) => {
     })
   } else if (block.sequence) {
     console.log('Creating Micro Epoch')
-    console.log(block)
     blocks.createMicroEpoch(block).then((mircoEpoch) => {
+      console.log(`Success: Created Micro Epoch ${block.hash }`)
       publishBlock(`microEpoch`, block)
     }).catch((err) => {
       console.log(err)
     })
   } else {
     console.log('Creating Epoch')
-    console.log(block)
     blocks.createEpoch(block).then((epoch) => {
+      console.log(`Success: Created Epoch ${block.hash }`)
       publishBlock(`epoch`, block)
     }).catch((err) => {
       console.log(err)
