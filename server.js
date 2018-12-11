@@ -193,8 +193,8 @@ const broadcastMqttRegex = mqttRegex('account/+account').exec
 const connectMQTT = () => {
   mqttClient = mqtt.connect(config.mqtt.url, config.mqtt.options)
   mqttClient.on('connect', () => {
-    console.log('Connected to MQTT server')
-    subscribe()
+    console.log('RPC Callback connected to MQTT server')
+    // subscribe()
   })
 
   // Where all subscribed messages come in
@@ -211,14 +211,14 @@ const handleBroadcastBlock = (account, message) => {
   // console.log('Broadcast for account ' + account + ' block ' + message)
 }
 
-let subscribed = false
-const subscribe = () => {
-  if (!subscribed) {
-    mqttClient.subscribe('account/+') // account number
-    console.log('Subscribed to selected topics')
-    subscribed = true
-  }
-}
+// let subscribed = false
+// const subscribe = () => {
+//   if (!subscribed) {
+//     mqttClient.subscribe('account/+') // account number
+//     console.log('Subscribed to selected topics')
+//     subscribed = true
+//   }
+// }
 
 const publishBlock = (topic, payload) => {
   mqttClient.publish(topic, JSON.stringify(payload), config.mqtt.block.opts)
@@ -226,9 +226,7 @@ const publishBlock = (topic, payload) => {
 
 const handleLogosCallback = (block) => {
   if (block.blocks) {
-    console.log('Creating Batch Block')
     blocks.createBatchBlock(block).then((batchBlock) => {
-      console.log(`Success: Created Batch Block ${block.hash }`)
       publishBlock(`batchBlock`, block)
       for (let transaction of block.blocks) {
         transaction.batchBlockHash = block.hash
@@ -246,17 +244,13 @@ const handleLogosCallback = (block) => {
       console.log(err)
     })
   } else if (block.sequence) {
-    console.log('Creating Micro Epoch')
     blocks.createMicroEpoch(block).then((mircoEpoch) => {
-      console.log(`Success: Created Micro Epoch ${block.hash }`)
       publishBlock(`microEpoch`, block)
     }).catch((err) => {
       console.log(err)
     })
   } else {
-    console.log('Creating Epoch')
     blocks.createEpoch(block).then((epoch) => {
-      console.log(`Success: Created Epoch ${block.hash }`)
       publishBlock(`epoch`, block)
     }).catch((err) => {
       console.log(err)
