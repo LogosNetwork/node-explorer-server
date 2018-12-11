@@ -38,6 +38,9 @@ app.post('/rpc', async (req, res) => {
   const response = await axios.post(`${targetURL}/`, req.body)
   res.send(response.data)
 });
+app.get('/delegates', (req, res) => {
+  res.send(config.delegates)
+})
 app.post('/password', (req, res) => {
   if (req.body.password && req.body.password === "locoforlogos") {
     let cert = fs.readFileSync('jwtRS256.key')
