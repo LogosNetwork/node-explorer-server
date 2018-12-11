@@ -41,9 +41,9 @@ app.post('/rpc', async (req, res) => {
 app.post('/password', (req, res) => {
   if (req.body.password && req.body.password === "locoforlogos") {
     let cert = fs.readFileSync('jwtRS256.key')
-    jwt.sign({}, cert, { algorithm: 'RS256'}, (err, token) => {
+    jwt.sign({}, cert, { algorithm: 'RS256' }, (err, token) => {
       res.send({
-        token:token
+        token: token
       })
     })
   }
@@ -88,7 +88,7 @@ app.post('/faucet', async (req, res) => {
       }
       RPC.account(privateKey).send(logosAmount, req.body.address).then((val) => {
         res.send({
-          msg:`Faucet has sent ${logosAmount} to ${req.body.address}`,
+          msg: `Faucet has sent ${logosAmount} to ${req.body.address}`,
           hash: val.hash
         })
       })
@@ -102,11 +102,11 @@ app.post('/verify', (req, res) => {
     jwt.verify(req.body.token, cert, { algorithms: ['RS256'] }, (err, payload) => {
       if (err) {
         res.send({
-          authenticated:false
+          authenticated: false
         })
       } else {
         res.send({
-          authenticated:true
+          authenticated: true
         })
       }
     })
@@ -114,13 +114,14 @@ app.post('/verify', (req, res) => {
 })
 app.get('/reset', (req, res) => {
   if (config.environment === "development") {
-    models.sequelize.sync({force:true})
-    res
-      .status(200)
-      .json({
-        'status': 'SUCCESS',
-        'message': 'Successfully cleared database'
-      })
+    models.sequelize.sync({ force: true }).then((val) => {
+      res
+        .status(200)
+        .json({
+          'status': 'SUCCESS',
+          'message': 'Successfully cleared database'
+        })
+    })
   } else {
     res
       .status(403)
@@ -180,10 +181,10 @@ mqttServer.on('ready', () => {
 })
 
 mqttServer.on('clientConnected', (client) => {
-	console.log(`client connected: ${client.id}`)
+  console.log(`client connected: ${client.id}`)
 })
 
-mqttServer.on('published', function(packet, client) {
+mqttServer.on('published', function (packet, client) {
   console.log(`Published Topic: ${packet.topic}`)
 })
 
@@ -242,7 +243,7 @@ const handleLogosCallback = (block) => {
     }).catch((err) => {
       console.log(err)
     })
-  } else if (block.micro_block_number) {
+  } else if (block.sequence) {
     blocks.createMicroEpoch(block).then((mircoEpoch) => {
     }).catch((err) => {
       console.log(err)
@@ -259,14 +260,14 @@ const handleLogosCallback = (block) => {
 
 // Static routes
 app.use(history())
-app.use(gzipStatic(path.join(__dirname,"/node-explorer-client/dist")))
+app.use(gzipStatic(path.join(__dirname, "/node-explorer-client/dist")))
 
 //Debug Logging
 app.use((req, res, next) => {
   if (config.debug) {
-    colog.log(colog.color(moment().format('YYYY-MM-DD HH:mm:ss') + ' - ','cyan') +
-              colog.color(req.headers['x-forwarded-for'] || req.connection.remoteAddress,'cyan')+
-              ' - '+colog.inverse(req.method)+' - '+colog.bold(req.url))
+    colog.log(colog.color(moment().format('YYYY-MM-DD HH:mm:ss') + ' - ', 'cyan') +
+      colog.color(req.headers['x-forwarded-for'] || req.connection.remoteAddress, 'cyan') +
+      ' - ' + colog.inverse(req.method) + ' - ' + colog.bold(req.url))
   }
   if (config.environment === "development") {
     res.header("Access-Control-Allow-Origin", "*")

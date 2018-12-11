@@ -6,8 +6,17 @@ const Op = Sequelize.Op;
 methods.createBatchBlock = (data) => {
   return new Promise((resolve, reject) => {
     models.batchBlock
-      .create(data)
-      .then((batchBlock) => {
+      .findOrCreate({
+       where: {
+         hash: {
+           [Op.eq]: data.hash
+         }
+       },
+       defaults: data
+      })
+      .spread((batchBlock, created) => {
+        console.log(batchBlock)
+        console.log(created)
         resolve(batchBlock.dataValues)
       })
       .catch((err) => {
@@ -18,37 +27,64 @@ methods.createBatchBlock = (data) => {
 methods.createBlock = (data) => {
   return new Promise((resolve, reject) => {
     models.block
-      .create(data)
-      .then((block) => {
-        resolve(block.dataValues)
-      })
-      .catch((err) => {
-        reject(err)
-      })
+    .findOrCreate({
+      where: {
+        hash: {
+          [Op.eq]: data.hash
+        }
+      },
+      defaults: data
+    })
+    .spread((block, created) => {
+      console.log(block)
+      console.log(created)
+      resolve(block.dataValues)
+    })
+    .catch((err) => {
+      reject(err)
+    })
   })
 }
 methods.createMicroEpoch = (data) => {
   return new Promise((resolve, reject) => {
     models.microEpoch
-      .create(data)
-      .then((microEpoch) => {
-        resolve(microEpoch.dataValues)
-      })
-      .catch((err) => {
-        reject(err)
-      })
+    .findOrCreate({
+      where: {
+        hash: {
+          [Op.eq]: data.hash
+        }
+      },
+      defaults: data
+    })
+    .spread((microEpoch, created) => {
+      console.log(microEpoch)
+      console.log(created)
+      resolve(microEpoch.dataValues)
+    })
+    .catch((err) => {
+      reject(err)
+    })
   })
 }
 methods.createEpoch = (data) => {
   return new Promise((resolve, reject) => {
     models.epoch
-      .create(data)
-      .then((epoch) => {
-        resolve(epoch.dataValues)
-      })
-      .catch((err) => {
-        reject(err)
-      })
+    .findOrCreate({
+      where: {
+        hash: {
+          [Op.eq]: data.hash
+        }
+      },
+      defaults: data
+    })
+    .spread((epoch, created) => {
+      console.log(epoch)
+      console.log(created)
+      resolve(epoch.dataValues)
+    })
+    .catch((err) => {
+      reject(err)
+    })
   })
 }
 
