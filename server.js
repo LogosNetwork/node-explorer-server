@@ -246,6 +246,7 @@ const handleLogosCallback = (block) => {
     })
   } else if (block.sequence) {
     console.log('Creating Micro Epoch')
+    console.log(block)
     blocks.createMicroEpoch(block).then((mircoEpoch) => {
       publishBlock(`microEpoch`, block)
     }).catch((err) => {
@@ -253,6 +254,7 @@ const handleLogosCallback = (block) => {
     })
   } else {
     console.log('Creating Epoch')
+    console.log(block)
     blocks.createEpoch(block).then((epoch) => {
       publishBlock(`epoch`, block)
     }).catch((err) => {
