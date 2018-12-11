@@ -15,9 +15,11 @@ methods.createBatchBlock = (data) => {
        defaults: data
       })
       .spread((batchBlock, created) => {
-        console.log(batchBlock)
-        console.log(created)
-        resolve(batchBlock.dataValues)
+        if (created) {
+          resolve(batchBlock.dataValues)
+        } else {
+          reject("Record already exists!")
+        }
       })
       .catch((err) => {
         reject(err)
@@ -36,9 +38,11 @@ methods.createBlock = (data) => {
       defaults: data
     })
     .spread((block, created) => {
-      console.log(block)
-      console.log(created)
-      resolve(block.dataValues)
+      if (created) {
+        resolve(block.dataValues)
+      } else {
+        reject("Record already exists!")
+      }
     })
     .catch((err) => {
       reject(err)
@@ -57,9 +61,11 @@ methods.createMicroEpoch = (data) => {
       defaults: data
     })
     .spread((microEpoch, created) => {
-      console.log(microEpoch)
-      console.log(created)
-      resolve(microEpoch.dataValues)
+      if (created) {
+        resolve(microEpoch.dataValues)
+      } else {
+        reject("Record already exists!")
+      }
     })
     .catch((err) => {
       reject(err)
@@ -78,9 +84,11 @@ methods.createEpoch = (data) => {
       defaults: data
     })
     .spread((epoch, created) => {
-      console.log(epoch)
-      console.log(created)
-      resolve(epoch.dataValues)
+      if (created) {
+        resolve(epoch.dataValues)
+      } else {
+        reject("Record already exists!")
+      }
     })
     .catch((err) => {
       reject(err)

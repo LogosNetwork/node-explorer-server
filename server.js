@@ -226,16 +226,17 @@ const publishBlock = (topic, payload) => {
 
 const handleLogosCallback = (block) => {
   if (block.blocks) {
-    publishBlock(`batchBlock`, block)
+    console.log('Creating Batch Block')
     blocks.createBatchBlock(block).then((batchBlock) => {
+      publishBlock(`batchBlock`, block)
       for (let transaction of block.blocks) {
         transaction.batchBlockHash = block.hash
         transaction.hash = hash.get(transaction)
         transaction.type = 'receive'
-        publishBlock(`account/${transaction.link_as_account}`, transaction)
-        transaction.type = 'send'
-        publishBlock(`account/${transaction.account}`, transaction)
         blocks.createBlock(transaction).then((dbBlock) => {
+          publishBlock(`account/${transaction.link_as_account}`, transaction)
+          transaction.type = 'send'
+          publishBlock(`account/${transaction.account}`, transaction)
         }).catch((err) => {
           console.log(err)
         })
@@ -244,17 +245,19 @@ const handleLogosCallback = (block) => {
       console.log(err)
     })
   } else if (block.sequence) {
+    console.log('Creating Micro Epoch')
     blocks.createMicroEpoch(block).then((mircoEpoch) => {
+      publishBlock(`microEpoch`, block)
     }).catch((err) => {
       console.log(err)
     })
-    publishBlock(`microEpoch`, block)
   } else {
+    console.log('Creating Epoch')
     blocks.createEpoch(block).then((epoch) => {
+      publishBlock(`epoch`, block)
     }).catch((err) => {
       console.log(err)
     })
-    publishBlock(`epoch`, block)
   }
 }
 
