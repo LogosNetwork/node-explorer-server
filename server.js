@@ -58,6 +58,7 @@ app.post('/password', (req, res) => {
   if (req.body.password && req.body.password === 'locoforlogos') {
     let cert = fs.readFileSync('jwtRS256.key')
     jwt.sign({}, cert, { algorithm: 'RS256' }, (err, token) => {
+      req.session.token = token
       res.send({
         token: token
       })
