@@ -119,7 +119,7 @@ app.get('/manual', (req, res) => {
       if (err) {
         res.redirect('/password?redirect%2Fmanual')
       } else {
-        res.sendFile('./static/manual.html')
+        res.sendFile(path.join(__dirname, '/static/manual.html'))
       }
     })
   } else {
