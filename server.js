@@ -23,18 +23,18 @@ const bigInt = require('big-integer')
 const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
 const hash = require('./util/hash.js')
 const session = require('express-session')
-const RedisStore = require('connect-redis')(session);
+const RedisStore = require('connect-redis')(session)
 const privateKey = config.faucetPrivateKey
 
 // Application Cookie Sessions
 const store = new RedisStore(redis)
 app.use(session({
   store: new RedisStore(store),
-  secret: sessionSecret,
+  secret: config.sessionSecret,
   resave: false,
   saveUninitialized: false
   //cookie: { secure: true } //TODO Add full SSL including callback
-}));
+}))
 
 // Application config
 app.use(bodyParser.json())
@@ -50,12 +50,12 @@ app.post('/rpc', async (req, res) => {
   delete req.body.targetURL
   const response = await axios.post(`${targetURL}/`, req.body)
   res.send(response.data)
-});
+})
 app.get('/delegates', (req, res) => {
   res.send(config.delegates)
 })
 app.post('/password', (req, res) => {
-  if (req.body.password && req.body.password === "locoforlogos") {
+  if (req.body.password && req.body.password === 'locoforlogos') {
     let cert = fs.readFileSync('jwtRS256.key')
     jwt.sign({}, cert, { algorithm: 'RS256' }, (err, token) => {
       res.send({
@@ -142,7 +142,7 @@ app.post('/verify', (req, res) => {
   }
 })
 app.get('/reset', (req, res) => {
-  if (config.environment === "development") {
+  if (config.environment === 'development') {
     models.sequelize.sync({ force: true }).then((val) => {
       res
         .status(200)
@@ -169,7 +169,7 @@ const mqttServerOpts = {
   db: 12,
   port: 6379,
   return_buffers: true,
-  host: "localhost"
+  host: 'localhost'
 }
 
 const moscaSettings = {
@@ -179,7 +179,7 @@ const moscaSettings = {
     factory: mosca.persistence.Redis
   },
   logger: {
-    name: "secure",
+    name: 'secure',
     level: 40,
   },
   http: {
@@ -189,7 +189,7 @@ const moscaSettings = {
   }
 }
 
-if (config.environment === "production") {
+if (config.environment === 'production') {
   const SECURE_KEY = config.keyPath
   const SECURE_CERT = config.certPath
   moscaSettings.https = {
@@ -289,7 +289,7 @@ const handleLogosCallback = (block) => {
 
 // Static routes
 app.use(history())
-app.use(gzipStatic(path.join(__dirname, "/node-explorer-client/dist")))
+app.use(gzipStatic(path.join(__dirname, '/node-explorer-client/dist')))
 
 //Debug Logging
 app.use((req, res, next) => {
@@ -298,10 +298,8 @@ app.use((req, res, next) => {
       colog.color(req.headers['x-forwarded-for'] || req.connection.remoteAddress, 'cyan') +
       ' - ' + colog.inverse(req.method) + ' - ' + colog.bold(req.url))
   }
-  if (config.environment === "development") {
-    res.header("Access-Control-Allow-Origin", "*")
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
-  }
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
   next()
 })
 
