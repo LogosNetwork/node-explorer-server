@@ -22,7 +22,20 @@ const RPC = new Logos({ url: 'http://107.21.165.224:55000', debug: true })
 const bigInt = require('big-integer')
 const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
 const hash = require('./util/hash.js')
+const session = require('express-session')
+const RedisStore = require('connect-redis')(session);
 const privateKey = config.faucetPrivateKey
+
+// Application Cookie Sessions
+const store = new RedisStore(redis)
+app.use(session({
+  store: new RedisStore(store),
+  secret: sessionSecret,
+  resave: false,
+  saveUninitialized: false
+  //cookie: { secure: true } //TODO Add full SSL including callback
+}));
+
 // Application config
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -99,7 +112,20 @@ app.post('/faucet', async (req, res) => {
 
   }
 })
+app.get('/manual', (req, res) => {
+  if (req.session.token) {
+    let cert = fs.readFileSync('jwtRS256.key.pub')
+    jwt.verify(req.session.token, cert, { algorithms: ['RS256'] }, (err, payload) => {
+      if (err) {
+        res.redirect('/password?redirect%2Fmanual')
+      } else {
+        res.sendFile('./static/manual.html')
+      }
+    })
+  }
+})
 app.post('/verify', (req, res) => {
+  req.session.token = req.body.token
   if (req.body.token) {
     let cert = fs.readFileSync('jwtRS256.key.pub')
     jwt.verify(req.body.token, cert, { algorithms: ['RS256'] }, (err, payload) => {
