@@ -123,7 +123,7 @@ app.get('/manual', (req, res) => {
       }
     })
   } else {
-    res.redirect('/password?redirect%2Fmanual')
+    res.redirect('/password?redirect=%2Fmanual')
   }
 })
 app.post('/verify', (req, res) => {
