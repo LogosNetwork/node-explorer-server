@@ -122,6 +122,8 @@ app.get('/manual', (req, res) => {
         res.sendFile('./static/manual.html')
       }
     })
+  } else {
+    res.redirect('/password?redirect%2Fmanual')
   }
 })
 app.post('/verify', (req, res) => {
