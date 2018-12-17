@@ -26,6 +26,13 @@ const session = require('express-session')
 const RedisStore = require('connect-redis')(session)
 const privateKey = config.faucetPrivateKey
 
+//CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
+  next()
+})
+
 // Application Cookie Sessions
 const store = new RedisStore(redis)
 app.use(session({
@@ -301,8 +308,6 @@ app.use((req, res, next) => {
       colog.color(req.headers['x-forwarded-for'] || req.connection.remoteAddress, 'cyan') +
       ' - ' + colog.inverse(req.method) + ' - ' + colog.bold(req.url))
   }
-  res.header('Access-Control-Allow-Origin', '*')
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
   next()
 })
 
