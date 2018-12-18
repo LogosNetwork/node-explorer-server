@@ -127,4 +127,23 @@ methods.findAllTransactions = (data) => {
   })
 }
 
+methods.findMostRecentBatchBlock = (data) => {
+  return new Promise((resolve, reject) => {
+    models.batchBlock
+      .findAll(
+        {
+          order: [
+            ['createdAt', 'DESC']
+          ],
+          limit:1
+        }
+      )
+      .then((blocks) => {
+        if (!blocks) { return reject('Could not get any blocks') }
+        resolve(blocks)
+      })
+      .catch((err) => { return reject(err) })
+  })
+}
+
 module.exports = methods
