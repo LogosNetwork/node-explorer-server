@@ -26,7 +26,7 @@ const session = require('express-session')
 const RedisStore = require('connect-redis')(session)
 const privateKey = config.faucetPrivateKey
 
-//CORS
+// CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*')
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
@@ -40,7 +40,7 @@ app.use(session({
   secret: config.sessionSecret,
   resave: false,
   saveUninitialized: false
-  //cookie: { secure: true } //TODO Add full SSL including callback
+  // cookie: { secure: true } //TODO Add full SSL including callback
 }))
 
 // Application config
@@ -65,10 +65,12 @@ app.post('/password', (req, res) => {
   if (req.body.password && req.body.password === 'locoforlogos') {
     let cert = fs.readFileSync('jwtRS256.key')
     jwt.sign({}, cert, { algorithm: 'RS256' }, (err, token) => {
-      req.session.token = token
-      res.send({
-        token: token
-      })
+      if (!err) {
+        req.session.token = token
+        res.send({
+          token: token
+        })
+      }
     })
   }
 })
@@ -117,7 +119,6 @@ app.post('/faucet', async (req, res) => {
         })
       })
     }
-
   }
 })
 app.get('/manual', (req, res) => {
@@ -172,7 +173,7 @@ app.get('/reset', (req, res) => {
 })
 app.use('/blocks', blockRoutes)
 
-//MQTT SERVER
+// MQTT SERVER
 const mqttServerOpts = {
   type: 'redis',
   redis: redis,
@@ -190,7 +191,7 @@ const moscaSettings = {
   },
   logger: {
     name: 'secure',
-    level: 40,
+    level: 40
   },
   http: {
     port: config.mqtt.wsport,
@@ -215,6 +216,7 @@ if (config.environment === 'production') {
 }
 
 let mqttServer = new mosca.Server(moscaSettings)
+let mqttClient = null
 mqttServer.on('ready', () => {
   console.log('Mosca server is up and running')
 })
@@ -301,7 +303,7 @@ const handleLogosCallback = (block) => {
 app.use(history())
 app.use(gzipStatic(path.join(__dirname, '/node-explorer-client/dist')))
 
-//Debug Logging
+// Debug Logging
 app.use((req, res, next) => {
   if (config.debug) {
     colog.log(colog.color(moment().format('YYYY-MM-DD HH:mm:ss') + ' - ', 'cyan') +
@@ -340,7 +342,7 @@ const configureSignals = () => {
   }))
 }
 
-//Database
+// Database
 models.batchBlock.hasMany(models.block)
 models.sequelize.sync().then(() => {
   configureSignals()
