@@ -272,6 +272,7 @@ const handleLogosCallback = (block) => {
       for (let transaction of block.blocks) {
         transaction.batchBlockHash = block.hash
         transaction.hash = hash.get(transaction)
+        transaction.type = 'send'
         publishBlock(`transaction/${transaction.hash}`, transaction)
         transaction.type = 'receive'
         blocks.createBlock(transaction).then((dbBlock) => {
