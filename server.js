@@ -98,7 +98,7 @@ app.post('/faucet', async (req, res) => {
     } else {
       let val = await RPC.account(privateKey).info()
       let delegateId = null
-      if (val.frontier === '0000000000000000000000000000000000000000000000000000000000000000') {
+      if (val.frontier !== '0000000000000000000000000000000000000000000000000000000000000000') {
         delegateId = parseInt(val.frontier.slice(-2), 16) % 32
       } else {
         delegateId = parseInt(config.accountKey.slice(-2), 16) % 32
