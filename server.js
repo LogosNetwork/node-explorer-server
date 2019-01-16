@@ -412,18 +412,18 @@ const sendFakeTransaction = async () => {
     logosAmount = Math.floor(Math.random() * Math.floor(998)) + 1
   } else {
     bal = bigInt(val.balance).minus(bigInt('10000000000000000000000'))
-    if (bal.greaterOrEquals(0)) {
-      bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
-      logosAmount = Number(bal).toFixed(5)
+    bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
+    if (bal > 2) {
+      logosAmount = Number(bal).toFixed(5) - 1
     } else {
-      console.log('Empty account')
+      console.log('Almost Empty account')
       // Empty account
       return
     }
   }
   RPC.account(accountKeys[senderIndex].privateKey).send(logosAmount, accountKeys[receiverIndex].address).then((block) => {
     accountKeys[senderIndex].balance = bigInt(val.balance).minus(bigInt('10000000000000000000000')).minus(RPC.convert.fromReason(logosAmount, 'LOGOS')).toString()
-    console.log(`Sent ${logosAmount} Logos from ${accountKeys[senderIndex].address} to ${accountKeys[receiverIndex].address}.`)
+    console.log(`Sent ${logosAmount} Logos from ${accountKeys[senderIndex].address} to ${accountKeys[receiverIndex].address}. Block Hash: ${block.hash}`)
   })
 }
 
