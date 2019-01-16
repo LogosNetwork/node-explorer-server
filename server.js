@@ -18,7 +18,7 @@ const blockRoutes = require('./routes/blocks')
 const jwt = require('jsonwebtoken')
 const fs = require('fs')
 const Logos = require('@logosnetwork/logos-rpc-client')
-const RPC = new Logos({ url: `http://${config.delegates[0]}:55000`, debug: true })
+const RPC = new Logos({ url: `http://${config.delegates[0]}:55000`, debug: false })
 const bigInt = require('big-integer')
 const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
 const hash = require('./util/hash.js')
@@ -387,9 +387,17 @@ const sendFakeTransaction = async () => {
       }
     }
   }
-
+  console.log('------------------')
+  console.log(senderIndex)
+  console.log(receiverIndex)
+  console.log(accountKeys)
+  console.log('------------------')
   // Calculate the value to send
   let val = await RPC.account(accountKeys[senderIndex].privateKey).info()
+  if (val.error) {
+    val.balance = '0'
+    val.frontier = '0000000000000000000000000000000000000000000000000000000000000000'
+  }
   let delegateId = null
   if (val.frontier !== '0000000000000000000000000000000000000000000000000000000000000000') {
     delegateId = parseInt(val.frontier.slice(-2), 16) % 32
@@ -413,7 +421,7 @@ const sendFakeTransaction = async () => {
       return
     }
   }
-  RPC.account(accountKeys[senderIndex].privateKey).send(logosAmount, accountKeys[receiverIndex].address).then((val) => {
+  RPC.account(accountKeys[senderIndex].privateKey).send(logosAmount, accountKeys[receiverIndex].address).then((block) => {
     accountKeys[senderIndex].balance = bigInt(val.balance).minus(bigInt('10000000000000000000000')).minus(RPC.convert.fromReason(logosAmount, 'LOGOS')).toString()
     console.log(`Sent ${logosAmount} Logos from ${accountKeys[senderIndex].address} to ${accountKeys[receiverIndex].address}.`)
   })
