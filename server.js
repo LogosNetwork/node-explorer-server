@@ -344,6 +344,91 @@ const configureSignals = () => {
   }))
 }
 
+let accountKeys = [{
+  privateKey: privateKey,
+  publicKey: RPC.account(privateKey).publicKey(),
+  address: config.accountID
+}]
+const sendFakeTransaction = async () => {
+  let senderIndex = 0
+  let receiverIndex = 0
+
+  // Calculate who the sender is
+  // Pull from fake accounts 80% of the time all the time
+  if (Math.random() > 0.2) {
+    // Select an existing fake account at random
+    if (accountKeys.length > 1) {
+      senderIndex = Math.floor(Math.random() * Math.floor(accountKeys.length - 1)) + 1
+    }
+  }
+
+  // If sending from faucet default reciever is incremented
+  // We don't want to send to ourselves
+  if (senderIndex === 0) {
+    receiverIndex++
+    if (accountKeys.length === 1) {
+      accountKeys.push(RPC.key.create())
+    }
+  }
+
+  // Calculate who the receiver is
+  // Pull from fake accounts 80% of the time all the time
+  if (Math.random() > 0.2) {
+    // Generate a new account 60% of the time
+    if (Math.random() > 0.4) {
+      // Generate a new account
+      accountKeys.push(RPC.key.create())
+      receiverIndex = accountKeys.length - 1
+    } else {
+      // Select an existing fake account at random
+      if (accountKeys.length > 1) {
+        receiverIndex = Math.floor(Math.random() * Math.floor(accountKeys.length - 1)) + 1
+      }
+    }
+  }
+
+  // Calculate the value to send
+  let val = await RPC.account(accountKeys[senderIndex].privateKey).info()
+  let delegateId = null
+  if (val.frontier !== '0000000000000000000000000000000000000000000000000000000000000000') {
+    delegateId = parseInt(val.frontier.slice(-2), 16) % 32
+  } else {
+    delegateId = parseInt(accountKeys[senderIndex].publicKey.slice(-2), 16) % 32
+  }
+  RPC.changeServer(`http://${config.delegates[delegateId]}:55000`)
+  let logosAmount = 0
+  let bal = bigInt(val.balance).divide(10000)
+  bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
+  if (bal > 1000) {
+    logosAmount = Math.floor(Math.random() * Math.floor(998)) + 1
+  } else {
+    bal = bigInt(val.balance).minus(bigInt('10000000000000000000000'))
+    if (bal.greaterOrEquals(0)) {
+      bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
+      logosAmount = Number(bal).toFixed(5)
+    } else {
+      console.log('Empty account')
+      // Empty account
+      return
+    }
+  }
+  RPC.account(accountKeys[senderIndex].privateKey).send(logosAmount, accountKeys[receiverIndex].address).then((val) => {
+    accountKeys[sendFakeTransaction].balance = bigInt(val.balance).minus(bigInt('10000000000000000000000')).minus(RPC.convert.fromReason(logosAmount, 'LOGOS')).toString()
+    console.log(`Sent ${logosAmount} Logos from ${accountKeys[senderIndex].address} to ${accountKeys[receiverIndex].address}.`)
+  })
+}
+
+const loop = () => {
+  let rand = Math.round(Math.random() * config.fakeTransactionsMaximumInterval) + 500
+  setTimeout(() => {
+    sendFakeTransaction()
+    loop()
+  }, rand)
+}
+if (config.fakeTransactions) {
+  loop()
+}
+
 // Database
 models.batchBlock.hasMany(models.block)
 models.sequelize.sync().then(() => {
