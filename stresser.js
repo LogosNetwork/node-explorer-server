@@ -143,8 +143,7 @@ const sendFakeTransaction = async () => {
 }
 
 const loop = () => {
-  let rand = Math.round(Math.random() * config.fakeTransactionsMaximumInterval)
-  console.log(rand)
+  let rand = Math.round(Math.random() * config.fakeTransactionsMaximumInterval) + config.fakeTransactionsMinimumInterval
   setTimeout(() => {
     sendFakeTransaction()
     loop()
