@@ -387,11 +387,6 @@ const sendFakeTransaction = async () => {
       }
     }
   }
-  console.log('------------------')
-  console.log(senderIndex)
-  console.log(receiverIndex)
-  console.log(accountKeys)
-  console.log('------------------')
   // Calculate the value to send
   let val = await RPC.account(accountKeys[senderIndex].privateKey).info()
   if (val.error) {
@@ -416,7 +411,7 @@ const sendFakeTransaction = async () => {
     if (bal > 2) {
       logosAmount = Number(bal).toFixed(5) - 1
     } else {
-      console.log('Almost Empty account')
+      console.log('Skipping Empty account')
       // Empty account
       return
     }
