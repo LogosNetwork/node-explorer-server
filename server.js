@@ -353,7 +353,15 @@ client.get('accountKeys', (err, result) => {
       address: config.accountID
     }]
   } else {
-    accountKeys = result
+    if (result !== null) {
+      accountKeys = result
+    } else {
+      accountKeys = [{
+        privateKey: config.faucetPrivateKey,
+        publicKey: config.accountKey,
+        address: config.accountID
+      }]
+    }
   }
 })
 
