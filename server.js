@@ -346,6 +346,8 @@ const configureSignals = () => {
 
 let accountKeys = null
 client.get('accountKeys', (err, result) => {
+  console.log(err)
+  console.log(result)
   if (err) {
     accountKeys = [{
       privateKey: config.faucetPrivateKey,
@@ -354,7 +356,7 @@ client.get('accountKeys', (err, result) => {
     }]
   } else {
     if (result !== null) {
-      accountKeys = result
+      accountKeys = JSON.parse(result)
     } else {
       accountKeys = [{
         privateKey: config.faucetPrivateKey,
@@ -437,7 +439,7 @@ const sendFakeTransaction = async () => {
     accountKeys[senderIndex].balance = bigInt(val.balance).minus(bigInt('10000000000000000000000')).minus(RPC.convert.fromReason(logosAmount, 'LOGOS')).toString()
     console.log(`Sent ${logosAmount} Logos from ${accountKeys[senderIndex].address} to ${accountKeys[receiverIndex].address}. Block Hash: ${block.hash}`)
   })
-  client.set('accountKeys', accountKeys)
+  client.set('accountKeys', JSON.stringify(accountKeys))
 }
 
 const loop = () => {
