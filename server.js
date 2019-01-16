@@ -414,7 +414,7 @@ const sendFakeTransaction = async () => {
     }
   }
   RPC.account(accountKeys[senderIndex].privateKey).send(logosAmount, accountKeys[receiverIndex].address).then((val) => {
-    accountKeys[sendFakeTransaction].balance = bigInt(val.balance).minus(bigInt('10000000000000000000000')).minus(RPC.convert.fromReason(logosAmount, 'LOGOS')).toString()
+    accountKeys[senderIndex].balance = bigInt(val.balance).minus(bigInt('10000000000000000000000')).minus(RPC.convert.fromReason(logosAmount, 'LOGOS')).toString()
     console.log(`Sent ${logosAmount} Logos from ${accountKeys[senderIndex].address} to ${accountKeys[receiverIndex].address}.`)
   })
 }
