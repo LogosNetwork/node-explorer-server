@@ -11,7 +11,6 @@ const axios = require('axios')
 const gzipStatic = require('connect-gzip-static')
 const history = require('connect-history-api-fallback')
 const redis = require('redis')
-const client = redis.createClient()
 const mosca = require('mosca')
 const mqtt = require('mqtt')
 const blocks = require('./services/blocks')
@@ -342,113 +341,6 @@ const configureSignals = () => {
   process.on('uncaughtException', handleAppExit.bind(null, {
     exit: true
   }))
-}
-
-let accountKeys = null
-client.get('accountKeys', (err, result) => {
-  if (err) {
-    accountKeys = [{
-      privateKey: config.faucetPrivateKey,
-      publicKey: config.accountKey,
-      address: config.accountID
-    }]
-  } else {
-    if (result !== null) {
-      accountKeys = JSON.parse(result)
-    } else {
-      accountKeys = [{
-        privateKey: config.faucetPrivateKey,
-        publicKey: config.accountKey,
-        address: config.accountID
-      }]
-    }
-  }
-})
-
-const sendFakeTransaction = async () => {
-  let senderIndex = 0
-  let receiverIndex = 0
-
-  // Calculate who the sender is
-  // Pull from fake accounts 80% of the time all the time
-  if (Math.random() > 0.2) {
-    // Select an existing fake account at random
-    if (accountKeys.length > 1) {
-      senderIndex = Math.floor(Math.random() * Math.floor(accountKeys.length - 1)) + 1
-    }
-  }
-
-  // If sending from faucet default reciever is incremented
-  // We don't want to send to ourselves
-  if (senderIndex === 0) {
-    receiverIndex++
-    if (accountKeys.length === 1) {
-      let account = await RPC.key.create()
-      accountKeys.push(account)
-    }
-  }
-
-  // Calculate who the receiver is
-  // Pull from fake accounts 80% of the time all the time
-  if (Math.random() > 0.2) {
-    // Generate a new account 60% of the time
-    if (Math.random() > 0.4) {
-      // Generate a new account
-      let account = await RPC.key.create()
-      accountKeys.push(account)
-      receiverIndex = accountKeys.length - 1
-    } else {
-      // Select an existing fake account at random
-      if (accountKeys.length > 1) {
-        receiverIndex = Math.floor(Math.random() * Math.floor(accountKeys.length - 1)) + 1
-      }
-    }
-  }
-  // Calculate the value to send
-  let val = await RPC.account(accountKeys[senderIndex].privateKey).info()
-  if (val.error) {
-    val.balance = '0'
-    val.frontier = '0000000000000000000000000000000000000000000000000000000000000000'
-  }
-  let delegateId = null
-  if (val.frontier !== '0000000000000000000000000000000000000000000000000000000000000000') {
-    delegateId = parseInt(val.frontier.slice(-2), 16) % 32
-  } else {
-    delegateId = parseInt(accountKeys[senderIndex].publicKey.slice(-2), 16) % 32
-  }
-  RPC.changeServer(`http://${config.delegates[delegateId]}:55000`)
-  let logosAmount = 0
-  let bal = bigInt(val.balance).divide(10000)
-  bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
-  if (bal > 1000) {
-    logosAmount = Math.floor(Math.random() * Math.floor(998)) + 1
-  } else {
-    bal = bigInt(val.balance).minus(bigInt('10000000000000000000000')).divide(Math.floor(Math.random() * Math.floor(20)) + 1)
-    bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
-    if (bal > 2) {
-      logosAmount = Math.floor(Number(bal).toFixed(5) - 1)
-    } else {
-      console.log('Skipping Empty account')
-      // Empty account
-      return
-    }
-  }
-  RPC.account(accountKeys[senderIndex].privateKey).send(logosAmount, accountKeys[receiverIndex].address).then((block) => {
-    accountKeys[senderIndex].balance = bigInt(val.balance).minus(bigInt('10000000000000000000000')).minus(RPC.convert.fromReason(logosAmount, 'LOGOS')).toString()
-    console.log(`Sent ${logosAmount} Logos from ${accountKeys[senderIndex].address} to ${accountKeys[receiverIndex].address}. Block Hash: ${block.hash}`)
-  })
-  client.set('accountKeys', JSON.stringify(accountKeys))
-}
-
-const loop = () => {
-  let rand = Math.round(Math.random() * config.fakeTransactionsMaximumInterval) + 500
-  setTimeout(() => {
-    sendFakeTransaction()
-    loop()
-  }, rand)
-}
-if (config.fakeTransactions) {
-  loop()
 }
 
 // Database
