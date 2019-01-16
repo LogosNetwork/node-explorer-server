@@ -24,7 +24,6 @@ const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wil
 const hash = require('./util/hash.js')
 const session = require('express-session')
 const RedisStore = require('connect-redis')(session)
-const privateKey = config.faucetPrivateKey
 
 // CORS
 app.use((req, res, next) => {
@@ -96,7 +95,7 @@ app.post('/faucet', async (req, res) => {
     if (abort) {
       res.send('Faucet encountered and error please try again!')
     } else {
-      let val = await RPC.account(privateKey).info()
+      let val = await RPC.account(config.faucetPrivateKey).info()
       let delegateId = null
       if (val.frontier !== '0000000000000000000000000000000000000000000000000000000000000000') {
         delegateId = parseInt(val.frontier.slice(-2), 16) % 32
@@ -112,7 +111,7 @@ app.post('/faucet', async (req, res) => {
       } else {
         logosAmount = Number(bal).toFixed(5)
       }
-      RPC.account(privateKey).send(logosAmount, req.body.address).then((val) => {
+      RPC.account(config.faucetPrivateKey).send(logosAmount, req.body.address).then((val) => {
         res.send({
           msg: `Faucet has sent ${logosAmount} to ${req.body.address}`,
           hash: val.hash
@@ -345,8 +344,8 @@ const configureSignals = () => {
 }
 
 let accountKeys = [{
-  privateKey: privateKey,
-  publicKey: RPC.account(privateKey).publicKey(),
+  privateKey: config.faucetPrivateKey,
+  publicKey: config.accountKey,
   address: config.accountID
 }]
 const sendFakeTransaction = async () => {
@@ -367,7 +366,8 @@ const sendFakeTransaction = async () => {
   if (senderIndex === 0) {
     receiverIndex++
     if (accountKeys.length === 1) {
-      accountKeys.push(RPC.key.create())
+      let account = await RPC.key.create()
+      accountKeys.push(account)
     }
   }
 
@@ -377,7 +377,8 @@ const sendFakeTransaction = async () => {
     // Generate a new account 60% of the time
     if (Math.random() > 0.4) {
       // Generate a new account
-      accountKeys.push(RPC.key.create())
+      let account = await RPC.key.create()
+      accountKeys.push(account)
       receiverIndex = accountKeys.length - 1
     } else {
       // Select an existing fake account at random
