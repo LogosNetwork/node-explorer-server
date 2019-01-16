@@ -409,7 +409,7 @@ const sendFakeTransaction = async () => {
     bal = bigInt(val.balance).minus(bigInt('10000000000000000000000')).divide(Math.floor(Math.random() * Math.floor(20)) + 1)
     bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
     if (bal > 2) {
-      logosAmount = Number(bal).toFixed(5) - 1
+      logosAmount = Math.floor(Number(bal).toFixed(5) - 1)
     } else {
       console.log('Skipping Empty account')
       // Empty account
