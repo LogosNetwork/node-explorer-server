@@ -346,8 +346,6 @@ const configureSignals = () => {
 
 let accountKeys = null
 client.get('accountKeys', (err, result) => {
-  console.log(err)
-  console.log(result)
   if (err) {
     accountKeys = [{
       privateKey: config.faucetPrivateKey,
