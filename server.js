@@ -11,6 +11,7 @@ const axios = require('axios')
 const gzipStatic = require('connect-gzip-static')
 const history = require('connect-history-api-fallback')
 const redis = require('redis')
+const client = redis.createClient()
 const mosca = require('mosca')
 const mqtt = require('mqtt')
 const blocks = require('./services/blocks')
@@ -343,11 +344,19 @@ const configureSignals = () => {
   }))
 }
 
-let accountKeys = [{
-  privateKey: config.faucetPrivateKey,
-  publicKey: config.accountKey,
-  address: config.accountID
-}]
+let accountKeys = null
+client.get('accountKeys', (err, result) => {
+  if (err) {
+    accountKeys = [{
+      privateKey: config.faucetPrivateKey,
+      publicKey: config.accountKey,
+      address: config.accountID
+    }]
+  } else {
+    accountKeys = result
+  }
+})
+
 const sendFakeTransaction = async () => {
   let senderIndex = 0
   let receiverIndex = 0
@@ -420,6 +429,7 @@ const sendFakeTransaction = async () => {
     accountKeys[senderIndex].balance = bigInt(val.balance).minus(bigInt('10000000000000000000000')).minus(RPC.convert.fromReason(logosAmount, 'LOGOS')).toString()
     console.log(`Sent ${logosAmount} Logos from ${accountKeys[senderIndex].address} to ${accountKeys[receiverIndex].address}. Block Hash: ${block.hash}`)
   })
+  client.set('accountKeys', accountKeys)
 }
 
 const loop = () => {
