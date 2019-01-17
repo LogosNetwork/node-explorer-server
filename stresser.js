@@ -6,7 +6,7 @@ const RPC = new Logos({ url: `http://${config.delegates[0]}:55000`, debug: false
 const bigInt = require('big-integer')
 const mqtt = require('mqtt')
 const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
-
+let transactionCountLastSecond = 0
 // MQTT Client
 const broadcastMqttRegex = mqttRegex('account/+account').exec
 let mqttClient = null
@@ -28,10 +28,8 @@ const connectMQTT = () => {
     let params = broadcastMqttRegex(topic)
     message = JSON.parse(message.toString())
     if (params && message.type === 'send') {
-      if (accountKeys[message.account]) {
-        console.log(`Confirmed: ${message.hash}
-Account: ${message.account}
-========================`)
+      transactionCountLastSecond++
+      if (accountKeys[message.account] && accountKeys[message.account].pending) {
         accountKeys[message.account].pending = false
       }
     }
@@ -68,8 +66,12 @@ client.get('accountKeys', (err, result) => {
       keys = Object.keys(accountKeys)
     }
   }
+  for (let i in keys) {
+    accountKeys[keys[i]].pending = false
+  }
+  console.log(`Starting Test with: ${keys.length} account(s)`)
 })
-const HundredThousandLogos = RPC.convert.toReason(100000, 'LOGOS')
+const seedMoney = RPC.convert.toReason(1000, 'LOGOS')
 const networkFee = '10000000000000000000000'
 let totalFeesPaid = bigInt(0)
 const sendFakeTransaction = async () => {
@@ -85,13 +87,13 @@ const sendFakeTransaction = async () => {
   }
   sender = accountKeys[keys[senderIndex]]
   if (sender.pending) {
-    console.log(`${sender.address} is still processing a transaction`)
+    // console.log(`${sender.address} is still processing a transaction`)
     return
   }
 
   // Calculate who the receiver is
-  // Generate a new account 20% of the time
-  if (Math.random() > 0.8) {
+  // Generate a new account
+  if (keys.length < config.maximumGeneratedAccounts) {
     // Generate a new account
     let account = await RPC.key.create()
     account.balance = '0'
@@ -136,12 +138,11 @@ const sendFakeTransaction = async () => {
     frontier = sender.previous
   }
   // Take balance in reason subtract transaction fee and then divide by a random number 1-50
-  let sendAmount = bigInt(balance).minus(bigInt(networkFee)).divide(Math.floor(Math.random() * Math.floor(50)) + 1)
-  // If sendAmount is greater than 1000 just send 1000.
-  if (sendAmount.greater(HundredThousandLogos)) {
-    sendAmount = HundredThousandLogos
+  let sendAmount = bigInt(balance).minus(bigInt(networkFee)).divide(Math.floor(Math.random() * Math.floor(10)) + 1)
+  if (sendAmount.greater(seedMoney)) {
+    sendAmount = seedMoney
   } else if (sendAmount.lesserOrEquals(0)) {
-    console.log('Skipping Empty account')
+    // console.log('Skipping Empty account')
     return
   }
 
@@ -157,11 +158,11 @@ const sendFakeTransaction = async () => {
   // Send block to the delegate
   sender.pending = true
   let block = await RPC.account(sender.privateKey).send(sendAmount, receiver.address, frontier, 'reason')
-  console.log(`Hash: ${block.hash}
-Sent ${RPC.convert.fromReason(sendAmount, 'LOGOS')}λ
-From ${sender.address}
-To ${receiver.address}
-========================`)
+  //   console.log(`Hash: ${block.hash}
+  // Sent ${RPC.convert.fromReason(sendAmount, 'LOGOS')}λ
+  // From ${sender.address}
+  // To ${receiver.address}
+  // ========================`)
   if (block.hash) {
     // Successful sent into consensus
     sender.balance = bigInt(balance).minus(sendAmount).minus(networkFee).toString()
@@ -179,8 +180,18 @@ const loop = () => {
     if (continueLoop) loop()
   }, rand)
 }
+const watchTPS = () => {
+  setTimeout(() => {
+    console.log(`TPS: ${transactionCountLastSecond} | Accounts: ${keys.length}`)
+    transactionCountLastSecond = 0
+    if (continueLoop) watchTPS()
+  }, 1000)
+}
 if (config.fakeTransactions) {
-  loop()
+  setTimeout(() => {
+    loop()
+    watchTPS()
+  }, 5000)
 }
 // Want to notify before shutting down
 const handleAppExit = (options, err) => {
