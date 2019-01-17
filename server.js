@@ -273,11 +273,10 @@ const handleLogosCallback = (block) => {
         transaction.hash = hash.get(transaction)
         transaction.type = 'send'
         publishBlock(`transaction/${transaction.hash}`, transaction)
-        transaction.type = 'receive'
         blocks.createBlock(transaction).then((dbBlock) => {
-          publishBlock(`account/${transaction.link_as_account}`, transaction)
-          transaction.type = 'send'
           publishBlock(`account/${transaction.account}`, transaction)
+          transaction.type = 'receive'
+          publishBlock(`account/${transaction.link_as_account}`, transaction)
         }).catch((err) => {
           console.log(err)
         })

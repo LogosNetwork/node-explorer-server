@@ -4,6 +4,40 @@ const client = redis.createClient()
 const Logos = require('@logosnetwork/logos-rpc-client')
 const RPC = new Logos({ url: `http://${config.delegates[0]}:55000`, debug: false })
 const bigInt = require('big-integer')
+const mqtt = require('mqtt')
+const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
+
+// MQTT Client
+const broadcastMqttRegex = mqttRegex('account/+account').exec
+let mqttClient = null
+const connectMQTT = () => {
+  mqttClient = mqtt.connect('wss:pla.bs:8443')
+  mqttClient.on('connect', () => {
+    console.log('RPC Callback connected to MQTT server')
+    mqttClient.subscribe('#', (err) => {
+      if (!err) {
+        console.log(`subscribed to #`)
+      } else {
+        console.log(err)
+      }
+    })
+  })
+
+  // Listen for confirmation
+  mqttClient.on('message', (topic, message) => {
+    let params = broadcastMqttRegex(topic)
+    message = JSON.parse(message.toString())
+    if (params && message.type === 'send') {
+      if (accountKeys[message.account]) {
+        console.log(`Confirmed: ${message.hash}
+Account: ${message.account}
+========================`)
+        accountKeys[message.account].pending = false
+      }
+    }
+  })
+}
+
 if (config.resetAccountKeys) client.set('accountKeys', '{}')
 let accountKeys = {}
 let keys = []
@@ -35,7 +69,7 @@ client.get('accountKeys', (err, result) => {
     }
   }
 })
-const oneThousandLogos = RPC.convert.toReason(1000, 'LOGOS')
+const HundredThousandLogos = RPC.convert.toReason(100000, 'LOGOS')
 const networkFee = '10000000000000000000000'
 let totalFeesPaid = bigInt(0)
 const sendFakeTransaction = async () => {
@@ -45,36 +79,30 @@ const sendFakeTransaction = async () => {
   let receiver = null
 
   // Calculate who the sender is
-  // Pull from fake accounts 80% of the time all the time
-  if (Math.random() > 0.2) {
-    // Select an existing fake account at random
-    if (keys.length > 1) {
-      senderIndex = Math.floor(Math.random() * Math.floor(keys.length - 1)) + 1
-    }
+  // Select an existing generated account at random
+  if (keys.length > 1) {
+    senderIndex = Math.floor(Math.random() * Math.floor(keys.length - 1)) + 1
   }
   sender = accountKeys[keys[senderIndex]]
   if (sender.pending) {
-    console.log('This account is still processing a transaction')
+    console.log(`${sender.address} is still processing a transaction`)
     return
   }
 
   // Calculate who the receiver is
-  // Use fake accounts 95% of the time all the time
-  if (Math.random() > 0.05) {
-    // Generate a new account 20% of the time
-    if (Math.random() > 0.8) {
-      // Generate a new account
-      let account = await RPC.key.create()
-      account.balance = '0'
-      account.previous = '0000000000000000000000000000000000000000000000000000000000000000'
-      accountKeys[account.address] = account
-      keys.push(account.address)
-      receiverIndex = keys.length - 1
-    } else {
-      // Select an existing fake account at random
-      if (keys.length > 1) {
-        receiverIndex = Math.floor(Math.random() * Math.floor(keys.length - 1)) + 1
-      }
+  // Generate a new account 20% of the time
+  if (Math.random() > 0.8) {
+    // Generate a new account
+    let account = await RPC.key.create()
+    account.balance = '0'
+    account.previous = '0000000000000000000000000000000000000000000000000000000000000000'
+    accountKeys[account.address] = account
+    keys.push(account.address)
+    receiverIndex = keys.length - 1
+  } else {
+    // Select an existing generated account at random
+    if (keys.length > 1) {
+      receiverIndex = Math.floor(Math.random() * Math.floor(keys.length - 1)) + 1
     }
   }
 
@@ -110,8 +138,8 @@ const sendFakeTransaction = async () => {
   // Take balance in reason subtract transaction fee and then divide by a random number 1-50
   let sendAmount = bigInt(balance).minus(bigInt(networkFee)).divide(Math.floor(Math.random() * Math.floor(50)) + 1)
   // If sendAmount is greater than 1000 just send 1000.
-  if (sendAmount.greater(oneThousandLogos)) {
-    sendAmount = oneThousandLogos
+  if (sendAmount.greater(HundredThousandLogos)) {
+    sendAmount = HundredThousandLogos
   } else if (sendAmount.lesserOrEquals(0)) {
     console.log('Skipping Empty account')
     return
@@ -129,26 +157,59 @@ const sendFakeTransaction = async () => {
   // Send block to the delegate
   sender.pending = true
   let block = await RPC.account(sender.privateKey).send(sendAmount, receiver.address, frontier, 'reason')
-  sender.balance = bigInt(balance).minus(sendAmount).minus(networkFee).toString()
-  totalFeesPaid = totalFeesPaid.plus(networkFee)
-  receiver.balance = bigInt(receiver.balance).plus(sendAmount).toString()
-  sender.previous = block.hash
   console.log(`Hash: ${block.hash}
-  Sent ${RPC.convert.fromReason(sendAmount, 'LOGOS')} Logos
-  From ${sender.address}
-  To ${receiver.address}
-  ========================`)
-  if (block.hash) sender.pending = false
-  client.set('accountKeys', JSON.stringify(accountKeys))
+Sent ${RPC.convert.fromReason(sendAmount, 'LOGOS')}λ
+From ${sender.address}
+To ${receiver.address}
+========================`)
+  if (block.hash) {
+    // Successful sent into consensus
+    sender.balance = bigInt(balance).minus(sendAmount).minus(networkFee).toString()
+    totalFeesPaid = totalFeesPaid.plus(networkFee)
+    receiver.balance = bigInt(receiver.balance).plus(sendAmount).toString()
+    sender.previous = block.hash
+    client.set('accountKeys', JSON.stringify(accountKeys))
+  }
 }
-
+let continueLoop = true
 const loop = () => {
   let rand = Math.round(Math.random() * config.fakeTransactionsMaximumInterval) + config.fakeTransactionsMinimumInterval
   setTimeout(() => {
     sendFakeTransaction()
-    loop()
+    if (continueLoop) loop()
   }, rand)
 }
 if (config.fakeTransactions) {
   loop()
 }
+// Want to notify before shutting down
+const handleAppExit = (options, err) => {
+  console.log(`Thanks for using the Logos Stress Tester you burnt ${RPC.convert.fromReason(totalFeesPaid, 'LOGOS')}λ in fees`)
+  if (err) {
+    console.log(err.stack)
+  }
+  if (options.cleanup) {
+    console.log('Cleaning up...')
+    if (mqttClient) {
+      mqttClient.end(true)
+    }
+  }
+  if (options.exit) {
+    console.log('Calling exit...')
+    process.exit()
+  }
+}
+
+const configureSignals = () => {
+  process.on('exit', handleAppExit.bind(null, {
+    cleanup: true
+  }))
+  process.on('SIGINT', handleAppExit.bind(null, {
+    exit: true
+  }))
+  process.on('uncaughtException', handleAppExit.bind(null, {
+    exit: true
+  }))
+}
+configureSignals()
+connectMQTT()
