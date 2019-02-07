@@ -146,4 +146,26 @@ methods.findMostRecentBatchBlock = (data) => {
   })
 }
 
+methods.batchBlocks = (previousDate, count = 50) => {
+  return new Promise((resolve, reject) => {
+    models.batchBlock
+      .findAll(
+        {
+          where: {
+            createdAt: { [Op.lt]: previousDate }
+          },
+          order: [
+            ['createdAt', 'DESC']
+          ],
+          limit:count
+        }
+      )
+      .then((blocks) => {
+        if (!blocks) { return reject('Could not get any blocks') }
+        resolve(blocks)
+      })
+      .catch((err) => { return reject(err) })
+  })
+}
+
 module.exports = methods

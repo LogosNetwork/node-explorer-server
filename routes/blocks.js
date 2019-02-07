@@ -50,4 +50,28 @@ router.get('/lastBatchBlock', (req, res) => {
   })
 })
 
+router.get('/batchBlocks', (req, res) => {
+  Blocks
+  .batchBlocks(req.query.previousDate, req.query.count)
+  .then((results) => {
+    res
+      .status(200)
+      .json({
+        'status': 'SUCCESS',
+        'message': 'Successfully found the batch blocks',
+        'data': {
+          'batchBlock': results
+        }
+      })
+  })
+  .catch((err) => {
+    res
+      .status(422)
+      .json({
+        'status': 'ERROR',
+        'message': err
+      })
+  })
+})
+
 module.exports = router
