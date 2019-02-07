@@ -146,9 +146,25 @@ methods.findMostRecentBatchBlock = (data) => {
   })
 }
 
-methods.batchBlocks = (previousDate, count = 50) => {
+methods.batchBlocks = (previousDate = null, count = 50) => {
   return new Promise((resolve, reject) => {
-    models.batchBlock
+    if (previousDate === null) {
+      models.batchBlock
+      .findAll(
+        {
+          order: [
+            ['createdAt', 'DESC']
+          ],
+          limit:count
+        }
+      )
+      .then((blocks) => {
+        if (!blocks) { return reject('Could not get any blocks') }
+        resolve(blocks)
+      })
+      .catch((err) => { return reject(err) })
+    } else {
+      models.batchBlock
       .findAll(
         {
           where: {
@@ -165,6 +181,7 @@ methods.batchBlocks = (previousDate, count = 50) => {
         resolve(blocks)
       })
       .catch((err) => { return reject(err) })
+    }
   })
 }
 
