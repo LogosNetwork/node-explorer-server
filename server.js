@@ -39,7 +39,7 @@ app.use(session({
   secret: config.sessionSecret,
   resave: false,
   saveUninitialized: false
-  // cookie: { secure: true } //TODO Add full SSL including callback
+  // cookie: { secure: true } //TODO Add full SSL including webhooks
 }))
 
 // Application config
@@ -48,7 +48,7 @@ app.use(bodyParser.urlencoded({ extended: true }))
 
 // Dynamic Routes
 app.post('/callback', (req, res) => {
-  handleLogosCallback(req.body)
+  handleLogosWebhook(req.body)
   res.send()
 })
 app.post('/rpc', async (req, res) => {
@@ -233,7 +233,7 @@ const broadcastMqttRegex = mqttRegex('account/+account').exec
 const connectMQTT = () => {
   mqttClient = mqtt.connect(config.mqtt.url, config.mqtt.options)
   mqttClient.on('connect', () => {
-    console.log('RPC Callback connected to MQTT server')
+    console.log('RPC Webhook connected to MQTT server')
     // subscribe()
   })
 
@@ -264,10 +264,10 @@ const publishBlock = (topic, payload) => {
   mqttClient.publish(topic, JSON.stringify(payload), config.mqtt.block.opts)
 }
 
-const handleLogosCallback = (block) => {
+const handleLogosWebhook = (block) => {
   if (block.blocks) {
     blocks.createBatchBlock(block).then((batchBlock) => {
-      publishBlock(`batchBlock`, block)
+      publishBlock(`batchBlock/${block.delegate_id}`, block)
       for (let transaction of block.blocks) {
         transaction.batchBlockHash = block.hash
         transaction.hash = hash.get(transaction)
