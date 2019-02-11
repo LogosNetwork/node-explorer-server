@@ -21,7 +21,6 @@ const Logos = require('@logosnetwork/logos-rpc-client')
 const RPC = new Logos({ url: `http://${config.delegates[0]}:55000`, debug: false })
 const bigInt = require('big-integer')
 const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
-const hash = require('./util/hash.js')
 const session = require('express-session')
 const RedisStore = require('connect-redis')(session)
 
@@ -264,19 +263,19 @@ const publishBlock = (topic, payload) => {
   mqttClient.publish(topic, JSON.stringify(payload), config.mqtt.block.opts)
 }
 
+// MQTT Publish Batch Blocks, Transcations, MicroEpochs, and Epochs
 const handleLogosWebhook = (block) => {
-  if (block.blocks) {
+  if (block.type === "BatchStateBlock") {
     blocks.createBatchBlock(block).then((batchBlock) => {
       publishBlock(`batchBlock/${block.delegate_id}`, block)
       for (let transaction of block.blocks) {
         transaction.batchBlockHash = block.hash
-        transaction.hash = hash.get(transaction)
-        transaction.type = 'send'
         publishBlock(`transaction/${transaction.hash}`, transaction)
         blocks.createBlock(transaction).then((dbBlock) => {
           publishBlock(`account/${transaction.account}`, transaction)
-          transaction.type = 'receive'
-          publishBlock(`account/${transaction.link_as_account}`, transaction)
+          for (let transactionTargets of transaction.transactions) {
+            publishBlock(`account/${transactionTargets.target}`, transaction)
+          }
         }).catch((err) => {
           console.log(err)
         })
@@ -284,13 +283,13 @@ const handleLogosWebhook = (block) => {
     }).catch((err) => {
       console.log(err)
     })
-  } else if (block.sequence) {
+  } else if (block.type === "MicroBlock") {
     blocks.createMicroEpoch(block).then((mircoEpoch) => {
       publishBlock(`microEpoch`, block)
     }).catch((err) => {
       console.log(err)
     })
-  } else {
+  } else if (block.type === "Epoch") {
     blocks.createEpoch(block).then((epoch) => {
       publishBlock(`epoch`, block)
     }).catch((err) => {
