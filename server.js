@@ -401,7 +401,7 @@ models.epoch.hasOne(models.epoch, {as: 'prev'})
 models.epoch.hasOne(models.epoch, {as: 'next'})
 models.epoch.hasOne(models.microEpoch, {as: 'microBlockTip'})
 
-models.sequelize.sync({ force: true }).then(() => {
+models.sequelize.sync().then(() => {
   configureSignals()
   connectMQTT()
   app.listen(config.system.port)
