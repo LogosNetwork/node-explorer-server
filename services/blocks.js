@@ -151,14 +151,20 @@ methods.findAllTransactions = (data) => {
             hash: {
               [Op.like]: '%'+data.hash+'%'
             }
-          }
+          },
+          include: [{
+            model: models.send,
+            as: 'sends'
+          }]
         }
       )
       .then((blocks) => {
         if (!blocks) { return reject('Could not get any blocks') }
         resolve(blocks)
       })
-      .catch((err) => { return reject(err) })
+      .catch((err) => {
+        return reject(err) 
+      })
   })
 }
 
