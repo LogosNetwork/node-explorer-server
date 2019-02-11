@@ -16,7 +16,7 @@ methods.createBatchBlock = (data) => {
       })
       .spread((batchBlock, created) => {
         if (created) {
-          resolve(batchBlock.dataValues)
+          resolve(batchBlock)
         } else {
           reject("Record already exists!")
         }
@@ -39,10 +39,45 @@ methods.createBlock = (data) => {
     })
     .spread((block, created) => {
       if (created) {
-        resolve(block.dataValues)
+        resolve(block)
       } else {
         reject("Record already exists!")
       }
+    })
+    .catch((err) => {
+      reject(err)
+    })
+  })
+}
+methods.createDelegate = (data) => {
+  return new Promise((resolve, reject) => {
+    models.delegate
+    .findOrCreate({
+      where: {
+        account: {
+          [Op.eq]: data.account
+        }
+      },
+      defaults: data
+    })
+    .spread((delegate, created) => {
+      if (created) {
+        resolve(delegate)
+      } else {
+        reject("Record already exists!")
+      }
+    })
+    .catch((err) => {
+      reject(err)
+    })
+  })
+}
+methods.createSend = (data) => {
+  return new Promise((resolve, reject) => {
+    models.send
+    .create(data)
+    .then((send) => {
+      resolve(send)
     })
     .catch((err) => {
       reject(err)
@@ -62,7 +97,7 @@ methods.createMicroEpoch = (data) => {
     })
     .spread((microEpoch, created) => {
       if (created) {
-        resolve(microEpoch.dataValues)
+        resolve(microEpoch)
       } else {
         reject("Record already exists!")
       }
@@ -85,7 +120,7 @@ methods.createEpoch = (data) => {
     })
     .spread((epoch, created) => {
       if (created) {
-        resolve(epoch.dataValues)
+        resolve(epoch)
       } else {
         reject("Record already exists!")
       }
@@ -141,6 +176,74 @@ methods.findMostRecentBatchBlock = (data) => {
       .then((blocks) => {
         if (!blocks) { return reject('Could not get any blocks') }
         resolve(blocks)
+      })
+      .catch((err) => { return reject(err) })
+  })
+}
+
+methods.getBatchBlock = (hash) => {
+  return new Promise((resolve, reject) => {
+    models.batchBlock
+      .findOne(
+        {
+          where: {
+            hash: hash
+          }
+        }
+      )
+      .then((batchBlock) => {
+        resolve(batchBlock)
+      })
+      .catch((err) => { return reject(err) })
+  })
+}
+
+methods.getBlock = (hash) => {
+  return new Promise((resolve, reject) => {
+    models.block
+      .findOne(
+        {
+          where: {
+            hash: hash
+          }
+        }
+      )
+      .then((block) => {
+        resolve(block)
+      })
+      .catch((err) => { return reject(err) })
+  })
+}
+
+methods.getMicroEpoch = (hash) => {
+  return new Promise((resolve, reject) => {
+    models.microEpoch
+      .findOne(
+        {
+          where: {
+            hash: hash
+          }
+        }
+      )
+      .then((microEpoch) => {
+        resolve(microEpoch)
+      })
+      .catch((err) => { return reject(err) })
+  })
+}
+
+methods.getEpoch = (hash) => {
+  return new Promise((resolve, reject) => {
+    models.epoch
+      .findOne(
+        {
+          where: {
+            hash: hash
+          }
+        }
+      )
+      .then((epoch) => {
+        resolve(epoch)
       })
       .catch((err) => { return reject(err) })
   })

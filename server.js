@@ -23,6 +23,7 @@ const bigInt = require('big-integer')
 const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
 const session = require('express-session')
 const RedisStore = require('connect-redis')(session)
+const EMPTYHEX = '0000000000000000000000000000000000000000000000000000000000000000'
 
 // CORS
 app.use((req, res, next) => {
@@ -96,7 +97,7 @@ app.post('/faucet', async (req, res) => {
     } else {
       let val = await RPC.account(config.faucetPrivateKey).info()
       let delegateId = null
-      if (val.frontier !== '0000000000000000000000000000000000000000000000000000000000000000') {
+      if (val.frontier !== EMPTYHEX) {
         delegateId = parseInt(val.frontier.slice(-2), 16) % 32
       } else {
         delegateId = parseInt(config.accountKey.slice(-2), 16) % 32
@@ -264,17 +265,30 @@ const publishBlock = (topic, payload) => {
 }
 
 // MQTT Publish Batch Blocks, Transcations, MicroEpochs, and Epochs
-const handleLogosWebhook = (block) => {
+const handleLogosWebhook = async (block) => {
   if (block.type === "BatchStateBlock") {
-    blocks.createBatchBlock(block).then((batchBlock) => {
-      publishBlock(`batchBlock/${block.delegate_id}`, block)
+    let prevBatch = await blocks.getBatchBlock(block.previous)
+    if (block.previous !== EMPTYHEX && prevBatch) {
+      block.prevHash = block.previous
+    }
+    blocks.createBatchBlock(block).then(async (batchBlock) => {
+      publishBlock(`batchBlock/${block.delegate}`, block)
       for (let transaction of block.blocks) {
         transaction.batchBlockHash = block.hash
+        let prevBlock = await blocks.getBlock(transaction.previous) 
+        if (transaction.previous !== EMPTYHEX && prevBlock) {
+          transaction.prevHash = transaction.previous
+        }
         publishBlock(`transaction/${transaction.hash}`, transaction)
         blocks.createBlock(transaction).then((dbBlock) => {
           publishBlock(`account/${transaction.account}`, transaction)
-          for (let transactionTargets of transaction.transactions) {
-            publishBlock(`account/${transactionTargets.target}`, transaction)
+          if (transaction.transactions) {
+            for (let transactionTargets of transaction.transactions) {
+              transactionTargets.blockHash = transaction.hash
+              blocks.createSend(transactionTargets).then((dbSend) => {
+                publishBlock(`account/${transactionTargets.target}`, transaction)
+              })
+            }
           }
         }).catch((err) => {
           console.log(err)
@@ -284,14 +298,42 @@ const handleLogosWebhook = (block) => {
       console.log(err)
     })
   } else if (block.type === "MicroBlock") {
-    blocks.createMicroEpoch(block).then((mircoEpoch) => {
+    let prevMicroEpoch = await blocks.getMicroEpoch(block.previous)
+    if (block.previous !== EMPTYHEX && prevMicroEpoch) {
+      block.prevHash = block.previous
+    }
+    blocks.createMicroEpoch(block).then(async (microEpoch) => {
+      for (let tip of block.tips) {
+        let batchBlockTip = await blocks.getBatchBlock(tip)
+        if (tip !== EMPTYHEX && batchBlockTip) {
+          batchBlockTip.update({
+            microEpochHash: block.hash
+          })
+        }
+      }
       publishBlock(`microEpoch`, block)
     }).catch((err) => {
       console.log(err)
     })
   } else if (block.type === "Epoch") {
-    blocks.createEpoch(block).then((epoch) => {
+    let prevEpoch = await blocks.getEpoch(block.previous)
+    if (block.previous !== EMPTYHEX && prevEpoch) {
+      block.prevHash = block.previous
+    }
+    blocks.createEpoch(block).then(async (epoch) => {
       publishBlock(`epoch`, block)
+      let microEpoch = await blocks.getMicroEpoch(block.micro_block_tip)
+      if (block.micro_block_tip !== EMPTYHEX && microEpoch) {
+        microEpoch.update({
+          microBlockTipHash: block.hash
+        })
+      }
+      for (let delegate of block.delegates) {
+        delegate.epochHash = block.hash
+        blocks.createDelegate(delegate).then().catch((err) => {
+          console.log(err)
+        })
+      }
     }).catch((err) => {
       console.log(err)
     })
@@ -342,8 +384,24 @@ const configureSignals = () => {
 }
 
 // Database
-models.batchBlock.hasMany(models.block)
-models.sequelize.sync().then(() => {
+models.block.hasMany(models.send, {as: 'sends'})
+models.block.hasOne(models.block, {as: 'prev'})
+models.block.hasOne(models.block, {as: 'next'})
+
+models.batchBlock.hasMany(models.block, {as: 'blocks'})
+models.batchBlock.hasOne(models.batchBlock, {as: 'prev'})
+models.batchBlock.hasOne(models.batchBlock, {as: 'next'})
+
+models.microEpoch.hasMany(models.batchBlock, {as: 'tips'})
+models.microEpoch.hasOne(models.microEpoch, {as: 'prev'})
+models.microEpoch.hasOne(models.microEpoch, {as: 'next'})
+
+models.epoch.hasMany(models.delegate, {as: 'delegates'})
+models.epoch.hasOne(models.epoch, {as: 'prev'})
+models.epoch.hasOne(models.epoch, {as: 'next'})
+models.epoch.hasOne(models.microEpoch, {as: 'microBlockTip'})
+
+models.sequelize.sync({ force: true }).then(() => {
   configureSignals()
   connectMQTT()
   app.listen(config.system.port)

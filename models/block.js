@@ -1,26 +1,14 @@
 module.exports = (sequelize, DataTypes) => {
     const block = sequelize.define('block', {
-      hash: {
-        type: DataTypes.STRING,
-        primaryKey: true
-      },
-      timestamp: {
-        type: DataTypes.STRING,
-        require: true
-      },
       account: {
         type: DataTypes.STRING,
         require: true
       },
-      previous: {
+      sequence: {
         type: DataTypes.STRING,
         require: true
       },
-      representative: {
-        type: DataTypes.STRING,
-        require: true
-      },
-      amount: {
+      transaction_type: {
         type: DataTypes.STRING,
         require: true
       },
@@ -28,27 +16,19 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         require: true
       },
-      link: {
-        type: DataTypes.STRING,
-        require: true
-      },
-      link_as_account: {
-        type: DataTypes.STRING,
-        require: true
-      },
-      work: {
-        type: DataTypes.STRING,
-        require: true
-      },
       signature: {
         type: DataTypes.STRING,
         require: true
       },
-      type: {
+      number_transactions: {
         type: DataTypes.STRING,
-        require: true
+        require: false
       },
-      batchBlockHash: {
+      hash: {
+        type: DataTypes.STRING,
+        primaryKey: true
+      },
+      index_in_batch: {
         type: DataTypes.STRING,
         require: true
       }

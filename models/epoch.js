@@ -1,18 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
     const epoch = sequelize.define('epoch', {
-      hash: {
-        type: DataTypes.STRING,
-        primaryKey: true
-      },
-      timestamp: {
-        type: DataTypes.STRING,
-        require: true
-      },
-      account: {
-        type: DataTypes.STRING,
-        require: true
-      },
-      previous: {
+      delegate: {
         type: DataTypes.STRING,
         require: true
       },
@@ -20,7 +8,19 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         require: true
       },
-      micro_block_tip: {
+      sequence: {
+        type: DataTypes.STRING,
+        require: true
+      },
+      timestamp: {
+        type: DataTypes.STRING,
+        require: true
+      },
+      signature: {
+        type: DataTypes.STRING,
+        require: true
+      },
+      type: {
         type: DataTypes.STRING,
         require: true
       },
@@ -28,9 +28,13 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         require: true
       },
-      signature: {
+      paricipation_map: {
         type: DataTypes.STRING,
         require: true
+      },
+      hash: {
+        type: DataTypes.STRING,
+        primaryKey: true
       }
     }, {
       freezeTableName: true

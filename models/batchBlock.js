@@ -1,14 +1,26 @@
 module.exports = (sequelize, DataTypes) => {
     const batchBlock = sequelize.define('batchBlock', {
-      hash: {
+      delegate: {
         type: DataTypes.STRING,
-        primaryKey: true
+        require: true
+      },
+      epoch_number: {
+        type: DataTypes.STRING,
+        require: true
+      },
+      sequence: {
+        type: DataTypes.STRING,
+        require: true
       },
       timestamp: {
         type: DataTypes.STRING,
         require: true
       },
-      previous: {
+      signature: {
+        type: DataTypes.STRING,
+        require: true
+      },
+      type: {
         type: DataTypes.STRING,
         require: true
       },
@@ -16,9 +28,13 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         require: true
       },
-      signature: {
+      paricipation_map: {
         type: DataTypes.STRING,
         require: true
+      },
+      hash: {
+        type: DataTypes.STRING,
+        primaryKey: true
       }
     }, {
       freezeTableName: true
