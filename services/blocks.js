@@ -176,7 +176,11 @@ methods.findMostRecentBatchBlock = (data) => {
           order: [
             ['createdAt', 'DESC']
           ],
-          limit:1
+          limit:1,
+          include: [{
+            model: models.block,
+            as: 'blocks'
+          }]
         }
       )
       .then((blocks) => {
