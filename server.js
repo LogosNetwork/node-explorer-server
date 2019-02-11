@@ -274,12 +274,13 @@ const handleLogosWebhook = async (block) => {
     blocks.createBatchBlock(block).then(async (batchBlock) => {
       publishBlock(`batchBlock/${block.delegate}`, block)
       for (let transaction of block.blocks) {
-        transaction.batchBlockHash = block.hash
+        transaction.timestamp = block.timestamp
+        publishBlock(`transaction/${transaction.hash}`, transaction)
+        transaction.batchBlockHash = transaction.batch_hash
         let prevBlock = await blocks.getBlock(transaction.previous) 
         if (transaction.previous !== EMPTYHEX && prevBlock) {
           transaction.prevHash = transaction.previous
         }
-        publishBlock(`transaction/${transaction.hash}`, transaction)
         blocks.createBlock(transaction).then((dbBlock) => {
           publishBlock(`account/${transaction.account}`, transaction)
           if (transaction.transactions) {
