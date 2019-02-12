@@ -154,7 +154,7 @@ methods.findAllTransactions = (data) => {
           },
           include: [{
             model: models.send,
-            as: 'sends'
+            as: 'transactions'
           }]
         }
       )

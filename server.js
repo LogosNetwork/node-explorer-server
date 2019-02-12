@@ -385,7 +385,7 @@ const configureSignals = () => {
 }
 
 // Database
-models.block.hasMany(models.send, {as: 'sends'})
+models.block.hasMany(models.send, {as: 'transactions'})
 models.block.hasOne(models.block, {as: 'prev'})
 models.block.hasOne(models.block, {as: 'next'})
 
