@@ -18,6 +18,14 @@ const blockRoutes = require('./routes/blocks')
 const jwt = require('jsonwebtoken')
 const fs = require('fs')
 const Logos = require('@logosnetwork/logos-rpc-client')
+const LogosWallet = require('@logosnetwork/logos-webwallet-sdk')
+const Wallet = LogosWallet.Wallet
+const wallet = new Wallet({
+  password: 'password'
+})
+wallet.createAccount({
+  privateKey: config.faucetPrivateKey
+})
 const RPC = new Logos({ url: `http://${config.delegates[0]}:55000`, debug: false })
 const bigInt = require('big-integer')
 const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
@@ -73,51 +81,25 @@ app.post('/password', (req, res) => {
     })
   }
 })
-let shouldAbort = function () {
-  return new Promise(resolve => {
-    let results = []
-    for (let i = 0; i < Object.keys(config.delegates).length; i++) {
-      RPC.changeServer(`http://${config.delegates[i]}:55000`)
-      RPC.accounts.info(config.accountID)
-        .then(val => {
-          results.push(val.frontier)
-          if (results.length === 32) {
-            let status = results.every((val, i, arr) => val === arr[0])
-            resolve(!status)
-          }
-        })
-    }
-  })
-}
 app.post('/faucet', async (req, res) => {
   if (req.body.address) {
-    let abort = await shouldAbort()
-    if (abort) {
-      res.send('Faucet encountered and error please try again!')
+    let val = wallet.account.pendingBalance
+    let logosAmount = 0
+    let bal = bigInt(val).divide(10000)
+    bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
+    if (bal > (1000)) {
+      logosAmount = 1000
     } else {
-      let val = await RPC.account(config.faucetPrivateKey).info()
-      let delegateId = null
-      if (val.frontier !== EMPTYHEX) {
-        delegateId = parseInt(val.frontier.slice(-2), 16) % 32
-      } else {
-        delegateId = parseInt(config.accountKey.slice(-2), 16) % 32
-      }
-      RPC.changeServer(`http://${config.delegates[delegateId]}:55000`)
-      let logosAmount = 0
-      let bal = bigInt(val.balance).divide(10000)
-      bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
-      if (bal > (1000)) {
-        logosAmount = 1000
-      } else {
-        logosAmount = Number(bal).toFixed(5)
-      }
-      RPC.account(config.faucetPrivateKey).send(logosAmount, req.body.address).then((val) => {
-        res.send({
-          msg: `Faucet has sent ${logosAmount} to ${req.body.address}`,
-          hash: val.hash
-        })
-      })
+      logosAmount = Number(bal).toFixed(5)
     }
+    let block = await wallet.account.createSend([{
+      target: req.body.address,
+      amount: RPC.convert.toReason(logosAmount, 'LOGOS')
+    }], true, wallet.rpc)
+    res.send({
+      msg: `Faucet has published sent transaction of ${logosAmount} Logos to ${req.body.address}`,
+      hash: val.hash
+    })
   }
 })
 app.get('/manual', (req, res) => {
