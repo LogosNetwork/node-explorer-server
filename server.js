@@ -95,7 +95,7 @@ app.post('/faucet', async (req, res) => {
     }], true, wallet.rpc)
     res.send({
       msg: `Faucet has published sent transaction of ${logosAmount} Logos to ${req.body.address}`,
-      hash: val.hash
+      hash: block.hash
     })
   }
 })
