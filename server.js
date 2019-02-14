@@ -385,8 +385,8 @@ models.sequelize.sync().then(() => {
   configureSignals()
   connectMQTT()
   app.listen(config.system.port)
+  wallet.createAccount({
+    privateKey: config.faucetPrivateKey
+  }).catch((err) => console.log(err))
+  console.log('Listening on port: ' + config.system.port)
 })
-console.log('Listening on port: ' + config.system.port)
-wallet.createAccount({
-  privateKey: config.faucetPrivateKey
-}).catch((err) => console.log(err))
