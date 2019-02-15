@@ -264,7 +264,7 @@ methods.batchBlocks = (previousDate = null, count = 50) => {
 methods.transactions = (previousDate = null, count = 50) => {
   return new Promise((resolve, reject) => {
     if (previousDate === null) {
-      models.transactions
+      models.block
       .findAll(
         {
           order: [
@@ -279,7 +279,7 @@ methods.transactions = (previousDate = null, count = 50) => {
       })
       .catch((err) => { return reject(err) })
     } else {
-      models.transactions
+      models.block
       .findAll(
         {
           where: {
