@@ -270,7 +270,11 @@ methods.transactions = (previousDate = null, count = 50) => {
           order: [
             ['createdAt', 'DESC']
           ],
-          limit:count
+          limit:count,
+          include: [{
+            model: models.send,
+            as: 'transactions'
+          }]
         }
       )
       .then((transactions) => {
@@ -288,7 +292,11 @@ methods.transactions = (previousDate = null, count = 50) => {
           order: [
             ['createdAt', 'DESC']
           ],
-          limit:count
+          limit:count,
+          include: [{
+            model: models.send,
+            as: 'transactions'
+          }]
         }
       )
       .then((transactions) => {
