@@ -4,7 +4,7 @@ const Blocks = require('../services/blocks')
 
 router.get('/transactions', (req, res) => {
   Blocks
-    .findAllTransactions(req.query)
+    .transactions(req.query.previousDate, req.query.count)
     .then((results) => {
       res
         .status(200)

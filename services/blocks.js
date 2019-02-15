@@ -131,43 +131,6 @@ methods.createEpoch = (data) => {
   })
 }
 
-methods.findAllTransactions = (data) => {
-  return new Promise((resolve, reject) => {
-    if (!data.page || data.page === null) {
-      data.page = 0
-    }
-    if (!data.hash || data.hash === null) {
-      data.hash = ""
-    }
-    models.block
-      .findAll(
-        {
-          order: [
-            ['createdAt', 'DESC']
-          ],
-          offset:data.page*50,
-          limit:50,
-          where: {
-            hash: {
-              [Op.like]: '%'+data.hash+'%'
-            }
-          },
-          include: [{
-            model: models.send,
-            as: 'transactions'
-          }]
-        }
-      )
-      .then((blocks) => {
-        if (!blocks) { return reject('Could not get any blocks') }
-        resolve(blocks)
-      })
-      .catch((err) => {
-        return reject(err) 
-      })
-  })
-}
-
 methods.findMostRecentBatchBlock = (data) => {
   return new Promise((resolve, reject) => {
     models.batchBlock
@@ -292,6 +255,45 @@ methods.batchBlocks = (previousDate = null, count = 50) => {
       .then((blocks) => {
         if (!blocks) { return reject('Could not get any blocks') }
         resolve(blocks)
+      })
+      .catch((err) => { return reject(err) })
+    }
+  })
+}
+
+methods.transactions = (previousDate = null, count = 50) => {
+  return new Promise((resolve, reject) => {
+    if (previousDate === null) {
+      models.transactions
+      .findAll(
+        {
+          order: [
+            ['createdAt', 'DESC']
+          ],
+          limit:count
+        }
+      )
+      .then((transactions) => {
+        if (!transactions) { return reject('Could not get any transactions') }
+        resolve(transactions)
+      })
+      .catch((err) => { return reject(err) })
+    } else {
+      models.transactions
+      .findAll(
+        {
+          where: {
+            createdAt: { [Op.lt]: previousDate }
+          },
+          order: [
+            ['createdAt', 'DESC']
+          ],
+          limit:count
+        }
+      )
+      .then((transactions) => {
+        if (!transactions) { return reject('Could not get any transactions') }
+        resolve(transactions)
       })
       .catch((err) => { return reject(err) })
     }
