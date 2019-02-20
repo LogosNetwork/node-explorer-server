@@ -15,8 +15,6 @@ const mosca = require('mosca')
 const mqtt = require('mqtt')
 const blocks = require('./services/blocks')
 const blockRoutes = require('./routes/blocks')
-const jwt = require('jsonwebtoken')
-const fs = require('fs')
 const Logos = require('@logosnetwork/logos-rpc-client')
 const LogosWallet = require('@logosnetwork/logos-webwallet-sdk')
 const Wallet = LogosWallet.Wallet
@@ -65,19 +63,6 @@ app.post('/rpc', async (req, res) => {
 app.get('/delegates', (req, res) => {
   res.send(config.delegates)
 })
-app.post('/password', (req, res) => {
-  if (req.body.password && req.body.password === 'locoforlogos') {
-    let cert = fs.readFileSync('jwtRS256.key')
-    jwt.sign({}, cert, { algorithm: 'RS256' }, (err, token) => {
-      if (!err) {
-        req.session.token = token
-        res.send({
-          token: token
-        })
-      }
-    })
-  }
-})
 app.post('/faucet', async (req, res) => {
   if (req.body.address) {
     let val = wallet.account.pendingBalance
@@ -100,35 +85,7 @@ app.post('/faucet', async (req, res) => {
   }
 })
 app.get('/manual', (req, res) => {
-  if (req.session.token) {
-    let cert = fs.readFileSync('jwtRS256.key.pub')
-    jwt.verify(req.session.token, cert, { algorithms: ['RS256'] }, (err, payload) => {
-      if (err) {
-        res.redirect('/password?redirect%2Fmanual')
-      } else {
-        res.sendFile(path.join(__dirname, '/static/manual.html'))
-      }
-    })
-  } else {
-    res.redirect('/password?redirect=%2Fmanual')
-  }
-})
-app.post('/verify', (req, res) => {
-  req.session.token = req.body.token
-  if (req.body.token) {
-    let cert = fs.readFileSync('jwtRS256.key.pub')
-    jwt.verify(req.body.token, cert, { algorithms: ['RS256'] }, (err, payload) => {
-      if (err) {
-        res.send({
-          authenticated: false
-        })
-      } else {
-        res.send({
-          authenticated: true
-        })
-      }
-    })
-  }
+  res.sendFile(path.join(__dirname, '/static/manual.html'))
 })
 app.get('/reset', (req, res) => {
   if (config.environment === 'development') {
