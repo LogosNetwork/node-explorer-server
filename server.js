@@ -19,7 +19,8 @@ const Logos = require('@logosnetwork/logos-rpc-client')
 const LogosWallet = require('@logosnetwork/logos-webwallet-sdk')
 const Wallet = LogosWallet.Wallet
 const wallet = new Wallet({
-  password: 'password'
+  password: 'password',
+  fullSync: false
 })
 const RPC = new Logos({ url: `http://${config.delegates[0]}:55000`, debug: false })
 const bigInt = require('big-integer')
