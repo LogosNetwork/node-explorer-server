@@ -17,6 +17,11 @@ const blocks = require('./services/blocks')
 const blockRoutes = require('./routes/blocks')
 const Logos = require('@logosnetwork/logos-rpc-client')
 const LogosWallet = require('@logosnetwork/logos-webwallet-sdk')
+const Wallet = LogosWallet.Wallet
+const wallet = new Wallet({
+  password: 'password',
+  fullSync: false
+})
 const RPC = new Logos({ url: `http://${config.delegates[0]}:55000`, debug: false })
 const bigInt = require('big-integer')
 const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
@@ -61,14 +66,6 @@ app.get('/delegates', (req, res) => {
 })
 app.post('/faucet', async (req, res) => {
   if (req.body.address) {
-    const Wallet = LogosWallet.Wallet
-    const wallet = new Wallet({
-      password: 'password',
-      fullSync: false
-    })
-    await wallet.createAccount({
-      privateKey: config.faucetPrivateKey
-    })
     let val = wallet.account.pendingBalance
     let logosAmount = 0
     let bal = bigInt(val).divide(10000)
@@ -346,5 +343,8 @@ models.sequelize.sync().then(() => {
   configureSignals()
   connectMQTT()
   app.listen(config.system.port)
+  wallet.createAccount({
+    privateKey: config.faucetPrivateKey
+  }).catch((err) => console.log(err))
   console.log('Listening on port: ' + config.system.port)
 })
