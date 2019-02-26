@@ -18,9 +18,13 @@ const blockRoutes = require('./routes/blocks')
 const Logos = require('@logosnetwork/logos-rpc-client')
 const LogosWallet = require('@logosnetwork/logos-webwallet-sdk')
 const Wallet = LogosWallet.Wallet
+const rpc = {
+  delegates: Object.values(config.delegates)
+}
 const wallet = new Wallet({
   password: 'password',
-  fullSync: false
+  fullSync: false,
+  rpc: rpc
 })
 const RPC = new Logos({ url: `http://${config.delegates[0]}:55000`, debug: false })
 const bigInt = require('big-integer')
@@ -76,7 +80,7 @@ app.post('/faucet', async (req, res) => {
       logosAmount = Number(bal).toFixed(5)
     }
     let block = await wallet.account.createSend([{
-      target: req.body.address,
+      destination: req.body.address,
       amount: RPC.convert.toReason(logosAmount, 'LOGOS')
     }], true, wallet.rpc)
     res.send({

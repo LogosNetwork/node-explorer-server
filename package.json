@@ -17,8 +17,8 @@
   },
   "homepage": "",
   "dependencies": {
-    "@logosnetwork/logos-rpc-client": "^1.1.6",
-    "@logosnetwork/logos-webwallet-sdk": "^0.1.8",
+    "@logosnetwork/logos-rpc-client": "^1.1.11",
+    "@logosnetwork/logos-webwallet-sdk": "^0.1.10",
     "axios": "^0.18.0",
     "big-integer": "^1.6.41",
     "blakejs": "^1.1.0",

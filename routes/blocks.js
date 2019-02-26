@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router()
 const Blocks = require('../services/blocks')
 
-router.get('/transactions', (req, res) => {
+router.get('/requests', (req, res) => {
   Blocks
     .transactions(req.query.previousDate, req.query.count)
     .then((results) => {
@@ -26,7 +26,7 @@ router.get('/transactions', (req, res) => {
     })
 })
 
-router.get('/lastBatchBlock', (req, res) => {
+router.get('/lastRequestBlock', (req, res) => {
   Blocks
   .findMostRecentBatchBlock()
   .then((results) => {
@@ -50,7 +50,7 @@ router.get('/lastBatchBlock', (req, res) => {
   })
 })
 
-router.get('/batchBlocks', (req, res) => {
+router.get('/requestBlocks', (req, res) => {
   Blocks
   .batchBlocks(req.query.previousDate, req.query.count)
   .then((results) => {
