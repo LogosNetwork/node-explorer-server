@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const send = sequelize.define('send', {
-    target: {
+    destination: {
       type: DataTypes.STRING,
       require: true
     },

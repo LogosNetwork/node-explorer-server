@@ -4,15 +4,15 @@ const Blocks = require('../services/blocks')
 
 router.get('/requests', (req, res) => {
   Blocks
-    .transactions(req.query.previousDate, req.query.count)
+    .requests(req.query.previousDate, req.query.count)
     .then((results) => {
       res
         .status(200)
         .json({
           'status': 'SUCCESS',
-          'message': 'Successfully found the transactions',
+          'message': 'Successfully found the requests',
           'data': {
-            'transactions': results
+            'requests': results
           }
         })
     })
@@ -28,7 +28,7 @@ router.get('/requests', (req, res) => {
 
 router.get('/lastRequestBlock', (req, res) => {
   Blocks
-  .findMostRecentBatchBlock()
+  .findMostRecentRequestBlock()
   .then((results) => {
     res
       .status(200)
@@ -36,7 +36,7 @@ router.get('/lastRequestBlock', (req, res) => {
         'status': 'SUCCESS',
         'message': 'Successfully found the most recent batch block',
         'data': {
-          'batchBlock': results
+          'requestBlock': results
         }
       })
   })
@@ -52,15 +52,15 @@ router.get('/lastRequestBlock', (req, res) => {
 
 router.get('/requestBlocks', (req, res) => {
   Blocks
-  .batchBlocks(req.query.previousDate, req.query.count)
+  .requestBlocks(req.query.previousDate, req.query.count)
   .then((results) => {
     res
       .status(200)
       .json({
         'status': 'SUCCESS',
-        'message': 'Successfully found the batch blocks',
+        'message': 'Successfully found the request blocks',
         'data': {
-          'batchBlock': results
+          'requestBlock': results
         }
       })
   })

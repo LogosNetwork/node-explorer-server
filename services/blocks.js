@@ -3,9 +3,9 @@ const models = require('../models')
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
-methods.createBatchBlock = (data) => {
+methods.createRequestBlock = (data) => {
   return new Promise((resolve, reject) => {
-    models.batchBlock
+    models.requestBlock
       .findOrCreate({
        where: {
          hash: {
@@ -14,9 +14,9 @@ methods.createBatchBlock = (data) => {
        },
        defaults: data
       })
-      .spread((batchBlock, created) => {
+      .spread((requestBlock, created) => {
         if (created) {
-          resolve(batchBlock)
+          resolve(requestBlock)
         } else {
           reject("Record already exists!")
         }
@@ -26,9 +26,9 @@ methods.createBatchBlock = (data) => {
       })
   })
 }
-methods.createBlock = (data) => {
+methods.createRequest = (data) => {
   return new Promise((resolve, reject) => {
-    models.block
+    models.request
     .findOrCreate({
       where: {
         hash: {
@@ -37,9 +37,9 @@ methods.createBlock = (data) => {
       },
       defaults: data
     })
-    .spread((block, created) => {
+    .spread((request, created) => {
       if (created) {
-        resolve(block)
+        resolve(request)
       } else {
         reject("Record already exists!")
       }
@@ -131,9 +131,9 @@ methods.createEpoch = (data) => {
   })
 }
 
-methods.findMostRecentBatchBlock = (data) => {
+methods.findMostRecentRequestBlock = (data) => {
   return new Promise((resolve, reject) => {
-    models.batchBlock
+    models.requestBlock
       .findAll(
         {
           order: [
@@ -141,22 +141,22 @@ methods.findMostRecentBatchBlock = (data) => {
           ],
           limit:1,
           include: [{
-            model: models.block,
-            as: 'blocks'
+            model: models.request,
+            as: 'requests'
           }]
         }
       )
       .then((blocks) => {
-        if (!blocks) { return reject('Could not get any blocks') }
+        if (!blocks) { return reject('Could not get any requests') }
         resolve(blocks)
       })
       .catch((err) => { return reject(err) })
   })
 }
 
-methods.getBatchBlock = (hash) => {
+methods.getRequestBlock = (hash) => {
   return new Promise((resolve, reject) => {
-    models.batchBlock
+    models.requestBlock
       .findOne(
         {
           where: {
@@ -164,16 +164,16 @@ methods.getBatchBlock = (hash) => {
           }
         }
       )
-      .then((batchBlock) => {
-        resolve(batchBlock)
+      .then((requestBlock) => {
+        resolve(requestBlock)
       })
       .catch((err) => { return reject(err) })
   })
 }
 
-methods.getBlock = (hash) => {
+methods.getRequest = (hash) => {
   return new Promise((resolve, reject) => {
-    models.block
+    models.request
       .findOne(
         {
           where: {
@@ -181,8 +181,8 @@ methods.getBlock = (hash) => {
           }
         }
       )
-      .then((block) => {
-        resolve(block)
+      .then((request) => {
+        resolve(request)
       })
       .catch((err) => { return reject(err) })
   })
@@ -222,10 +222,10 @@ methods.getEpoch = (hash) => {
   })
 }
 
-methods.batchBlocks = (previousDate = null, count = 50) => {
+methods.requestBlocks = (previousDate = null, count = 50) => {
   return new Promise((resolve, reject) => {
     if (previousDate === null) {
-      models.batchBlock
+      models.requestBlock
       .findAll(
         {
           order: [
@@ -234,13 +234,13 @@ methods.batchBlocks = (previousDate = null, count = 50) => {
           limit:count
         }
       )
-      .then((blocks) => {
-        if (!blocks) { return reject('Could not get any blocks') }
-        resolve(blocks)
+      .then((requestBlocks) => {
+        if (!requestBlocks) { return reject('Could not get any request blocks') }
+        resolve(requestBlocks)
       })
       .catch((err) => { return reject(err) })
     } else {
-      models.batchBlock
+      models.requestBlock
       .findAll(
         {
           where: {
@@ -252,19 +252,19 @@ methods.batchBlocks = (previousDate = null, count = 50) => {
           limit:count
         }
       )
-      .then((blocks) => {
-        if (!blocks) { return reject('Could not get any blocks') }
-        resolve(blocks)
+      .then((requestBlocks) => {
+        if (!requestBlocks) { return reject('Could not get any request blocks') }
+        resolve(requestBlocks)
       })
       .catch((err) => { return reject(err) })
     }
   })
 }
 
-methods.transactions = (previousDate = null, count = 50) => {
+methods.requests = (previousDate = null, count = 50) => {
   return new Promise((resolve, reject) => {
     if (previousDate === null) {
-      models.block
+      models.request
       .findAll(
         {
           order: [
@@ -277,13 +277,13 @@ methods.transactions = (previousDate = null, count = 50) => {
           }]
         }
       )
-      .then((transactions) => {
-        if (!transactions) { return reject('Could not get any transactions') }
-        resolve(transactions)
+      .then((requests) => {
+        if (!requests) { return reject('Could not get any requests') }
+        resolve(requests)
       })
       .catch((err) => { return reject(err) })
     } else {
-      models.block
+      models.request
       .findAll(
         {
           where: {
@@ -299,9 +299,9 @@ methods.transactions = (previousDate = null, count = 50) => {
           }]
         }
       )
-      .then((transactions) => {
-        if (!transactions) { return reject('Could not get any transactions') }
-        resolve(transactions)
+      .then((requests) => {
+        if (!requests) { return reject('Could not get any requests') }
+        resolve(requests)
       })
       .catch((err) => { return reject(err) })
     }

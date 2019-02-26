@@ -24,11 +24,11 @@ const rpc = {
 const wallet = new Wallet({
   password: 'password',
   fullSync: false,
-  rpc: rpc
+  rpc: rpc,
+  mqtt: 'ws:localhost:8883'
 })
 const RPC = new Logos({ url: `http://${config.delegates[0]}:55000`, debug: false })
 const bigInt = require('big-integer')
-const mqttRegex = require('mqtt-regex') // Used to parse out parameters from wildcard MQTT topics
 const session = require('express-session')
 const RedisStore = require('connect-redis')(session)
 const EMPTYHEX = '0000000000000000000000000000000000000000000000000000000000000000'
@@ -84,7 +84,7 @@ app.post('/faucet', async (req, res) => {
       amount: RPC.convert.toReason(logosAmount, 'LOGOS')
     }], true, wallet.rpc)
     res.send({
-      msg: `Faucet has published sent transaction of ${logosAmount} Logos to ${req.body.address}`,
+      msg: `Faucet has published sent request of ${logosAmount} Logos to ${req.body.address}`,
       hash: block.hash
     })
   }
@@ -170,65 +170,41 @@ mqttServer.on('published', function (packet, client) {
 })
 
 // MQTT Client
-const broadcastMqttRegex = mqttRegex('account/+account').exec
 const connectMQTT = () => {
   mqttClient = mqtt.connect(config.mqtt.url, config.mqtt.options)
   mqttClient.on('connect', () => {
     console.log('RPC Webhook connected to MQTT server')
-    // subscribe()
-  })
-
-  // Where all subscribed messages come in
-  mqttClient.on('message', (topic, message) => {
-    let params = broadcastMqttRegex(topic)
-    if (params) {
-      return handleBroadcastBlock(params.account, message)
-    }
-    // console.log(`No handler for topic ${topic}`)
   })
 }
 
-const handleBroadcastBlock = (account, message) => {
-  // console.log('Broadcast for account ' + account + ' block ' + message)
-}
-
-// let subscribed = false
-// const subscribe = () => {
-//   if (!subscribed) {
-//     mqttClient.subscribe('account/+') // account number
-//     console.log('Subscribed to selected topics')
-//     subscribed = true
-//   }
-// }
-
-const publishBlock = (topic, payload) => {
+const publish = (topic, payload) => {
   mqttClient.publish(topic, JSON.stringify(payload), config.mqtt.block.opts)
 }
 
 // MQTT Publish Batch Blocks, Transcations, MicroEpochs, and Epochs
 const handleLogosWebhook = async (block) => {
-  if (block.type === "BatchStateBlock") {
-    let prevBatch = await blocks.getBatchBlock(block.previous)
-    if (block.previous !== EMPTYHEX && prevBatch) {
+  if (block.type === "RequestBlock") {
+    let prevRequestBatch = await blocks.getRequestBlock(block.previous)
+    if (block.previous !== EMPTYHEX && prevRequestBatch) {
       block.prevHash = block.previous
     }
-    blocks.createBatchBlock(block).then(async (batchBlock) => {
-      publishBlock(`batchBlock/${block.delegate}`, block)
-      for (let transaction of block.blocks) {
-        transaction.timestamp = block.timestamp
-        publishBlock(`transaction/${transaction.hash}`, transaction)
-        transaction.batchBlockHash = transaction.batch_hash
-        let prevBlock = await blocks.getBlock(transaction.previous) 
-        if (transaction.previous !== EMPTYHEX && prevBlock) {
-          transaction.prevHash = transaction.previous
+    blocks.createRequestBlock(block).then(async (requestBlock) => {
+      publish(`requestBlock/${block.delegate}`, block)
+      for (let request of block.requests) {
+        request.timestamp = block.timestamp
+        publish(`request/${request.hash}`, request)
+        request.requestBlockHash = block.hash
+        let prevRequest = await blocks.getRequest(request.previous) 
+        if (request.previous !== EMPTYHEX && prevRequest) {
+          request.prevHash = request.previous
         }
-        blocks.createBlock(transaction).then((dbBlock) => {
-          publishBlock(`account/${transaction.account}`, transaction)
-          if (transaction.transactions) {
-            for (let transactionTargets of transaction.transactions) {
-              transactionTargets.blockHash = transaction.hash
-              blocks.createSend(transactionTargets).then((dbSend) => {
-                publishBlock(`account/${transactionTargets.target}`, transaction)
+        blocks.createRequest(request).then((dbBlock) => {
+          publish(`account/${request.origin}`, request)
+          if (request.type === 'send' && request.transactions) {
+            for (let transaction of request.transactions) {
+              transaction.requestHash = request.hash
+              blocks.createSend(transaction).then((dbSend) => {
+                publish(`account/${transaction.destination}`, request)
               })
             }
           }
@@ -246,14 +222,14 @@ const handleLogosWebhook = async (block) => {
     }
     blocks.createMicroEpoch(block).then(async (microEpoch) => {
       for (let tip of block.tips) {
-        let batchBlockTip = await blocks.getBatchBlock(tip)
-        if (tip !== EMPTYHEX && batchBlockTip) {
-          batchBlockTip.update({
+        let requestBlockTip = await blocks.getRequestBlock(tip)
+        if (tip !== EMPTYHEX && requestBlockTip) {
+          requestBlockTip.update({
             microEpochHash: block.hash
           })
         }
       }
-      publishBlock(`microEpoch`, block)
+      publish(`microEpoch`, block)
     }).catch((err) => {
       console.log(err)
     })
@@ -263,7 +239,7 @@ const handleLogosWebhook = async (block) => {
       block.prevHash = block.previous
     }
     blocks.createEpoch(block).then(async (epoch) => {
-      publishBlock(`epoch`, block)
+      publish(`epoch`, block)
       let microEpoch = await blocks.getMicroEpoch(block.micro_block_tip)
       if (block.micro_block_tip !== EMPTYHEX && microEpoch) {
         microEpoch.update({
@@ -326,15 +302,15 @@ const configureSignals = () => {
 }
 
 // Database
-models.block.hasMany(models.send, {as: 'transactions'})
-models.block.hasOne(models.block, {as: 'prev'})
-models.block.hasOne(models.block, {as: 'next'})
+models.request.hasMany(models.send, {as: 'transactions'})
+models.request.hasOne(models.request, {as: 'prev'})
+models.request.hasOne(models.request, {as: 'next'})
 
-models.batchBlock.hasMany(models.block, {as: 'blocks'})
-models.batchBlock.hasOne(models.batchBlock, {as: 'prev'})
-models.batchBlock.hasOne(models.batchBlock, {as: 'next'})
+models.requestBlock.hasMany(models.request, {as: 'requests'})
+models.requestBlock.hasOne(models.requestBlock, {as: 'prev'})
+models.requestBlock.hasOne(models.requestBlock, {as: 'next'})
 
-models.microEpoch.hasMany(models.batchBlock, {as: 'tips'})
+models.microEpoch.hasMany(models.requestBlock, {as: 'tips'})
 models.microEpoch.hasOne(models.microEpoch, {as: 'prev'})
 models.microEpoch.hasOne(models.microEpoch, {as: 'next'})
 

@@ -1,6 +1,10 @@
 module.exports = (sequelize, DataTypes) => {
-    const block = sequelize.define('block', {
-      account: {
+    const requestBlock = sequelize.define('requestBlock', {
+      delegate: {
+        type: DataTypes.STRING,
+        require: true
+      },
+      epoch_number: {
         type: DataTypes.STRING,
         require: true
       },
@@ -8,11 +12,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         require: true
       },
-      transaction_type: {
-        type: DataTypes.STRING,
-        require: true
-      },
-      transaction_fee: {
+      timestamp: {
         type: DataTypes.STRING,
         require: true
       },
@@ -20,20 +20,24 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         require: true
       },
-      number_transactions: {
+      type: {
         type: DataTypes.STRING,
-        require: false
+        require: true
+      },
+      request_count: {
+        type: DataTypes.STRING,
+        require: true
+      },
+      paricipation_map: {
+        type: DataTypes.STRING,
+        require: true
       },
       hash: {
         type: DataTypes.STRING,
         primaryKey: true
-      },
-      index_in_batch: {
-        type: DataTypes.STRING,
-        require: true
       }
     }, {
       freezeTableName: true
     })
-    return block
+    return requestBlock
   }
