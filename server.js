@@ -19,6 +19,7 @@ const Logos = require('@logosnetwork/logos-rpc-client')
 const LogosWallet = require('@logosnetwork/logos-webwallet-sdk')
 const Wallet = LogosWallet.Wallet
 const rpc = {
+  proxy: 'https://pla.bs',
   delegates: Object.values(config.delegates)
 }
 const wallet = new Wallet({
@@ -79,10 +80,10 @@ app.post('/faucet', async (req, res) => {
     } else {
       logosAmount = Number(bal).toFixed(5)
     }
-    let block = await wallet.account.createSend([{
+    let block = await wallet.account.createSendRequest([{
       destination: req.body.address,
       amount: RPC.convert.toReason(logosAmount, 'LOGOS')
-    }], true, wallet.rpc)
+    }])
     res.send({
       msg: `Faucet has published sent request of ${logosAmount} Logos to ${req.body.address}`,
       hash: block.hash
