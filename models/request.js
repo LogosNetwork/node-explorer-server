@@ -24,10 +24,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         require: true
       },
-      number_transactions: {
-        type: DataTypes.STRING,
-        require: false
-      },
       hash: {
         type: DataTypes.STRING,
         primaryKey: true

@@ -2,6 +2,7 @@ let methods = {}
 const mqtt = require('mqtt')
 const config = require('../config.json')
 const blocks = require('./blocks')
+const EMPTYHEX = '0000000000000000000000000000000000000000000000000000000000000000'
 
 // MQTT Client
 let mqttClient = null
@@ -48,6 +49,34 @@ methods.handleMessage = async (request) => {
                 publish(`account/${transaction.destination}`, request)
               })
             }
+          } else if (request.type === 'change') {
+            // Not yet implemented
+          } else if (request.type === 'issuance') {
+            // Kill me
+          } else if (request.type === 'issue_additional') {
+            
+          } else if (request.type === 'change_setting') {
+            
+          } else if (request.type === 'immute_setting') {
+
+          } else if (request.type === 'revoke') {
+
+          } else if (request.type === 'adjust_user_status') {
+
+          } else if (request.type === 'adjust_fee') {
+
+          } else if (request.type === 'update_issuer_info') {
+
+          } else if (request.type === 'update_controller') {
+
+          } else if (request.type === 'burn') {
+
+          } else if (request.type === 'distribute') {
+
+          } else if (request.type === 'withdraw_fee') {
+
+          } else if (request.type === 'token_send') {
+
           }
         }).catch((err) => {
           console.log(err)
