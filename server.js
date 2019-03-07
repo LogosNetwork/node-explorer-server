@@ -12,8 +12,7 @@ const gzipStatic = require('connect-gzip-static')
 const history = require('connect-history-api-fallback')
 const redis = require('redis')
 const mosca = require('mosca')
-const mqtt = require('mqtt')
-const blocks = require('./services/blocks')
+const mqtt = require('./services/mqtt')
 const blockRoutes = require('./routes/blocks')
 const Logos = require('@logosnetwork/logos-rpc-client')
 const LogosWallet = require('@logosnetwork/logos-webwallet-sdk')
@@ -32,7 +31,6 @@ const RPC = new Logos({ url: `http://${config.delegates[0]}:55000`, debug: false
 const bigInt = require('big-integer')
 const session = require('express-session')
 const RedisStore = require('connect-redis')(session)
-const EMPTYHEX = '0000000000000000000000000000000000000000000000000000000000000000'
 
 // CORS
 app.use((req, res, next) => {
@@ -57,7 +55,7 @@ app.use(bodyParser.urlencoded({ extended: true }))
 
 // Dynamic Routes
 app.post('/callback', (req, res) => {
-  handleLogosWebhook(req.body)
+  mqtt.handleMessage(req.body)
   res.send()
 })
 app.post('/rpc', async (req, res) => {
@@ -156,9 +154,21 @@ if (config.environment === 'production') {
   }
 }
 
+// Accepts all connections 
+const authenticate = (client, username, password, callback) => {
+  client.admin = (username === 'admin' && password.toString() === config.mqtt.options.password);
+  callback(null, true);
+}
+
+// Only allow this if client is admin
+const authorizePublish = (client, topic, payload, callback) => {
+  callback(null, client.admin);
+}
+
 let mqttServer = new mosca.Server(moscaSettings)
-let mqttClient = null
 mqttServer.on('ready', () => {
+  mqttServer.authenticate = authenticate
+  mqttServer.authorizePublish = authorizePublish
   console.log('Mosca server is up and running')
 })
 
@@ -169,95 +179,6 @@ mqttServer.on('clientConnected', (client) => {
 mqttServer.on('published', function (packet, client) {
   console.log(`Published Topic: ${packet.topic}`)
 })
-
-// MQTT Client
-const connectMQTT = () => {
-  mqttClient = mqtt.connect(config.mqtt.url, config.mqtt.options)
-  mqttClient.on('connect', () => {
-    console.log('RPC Webhook connected to MQTT server')
-  })
-}
-
-const publish = (topic, payload) => {
-  mqttClient.publish(topic, JSON.stringify(payload), config.mqtt.block.opts)
-}
-
-// MQTT Publish Batch Blocks, Transcations, MicroEpochs, and Epochs
-const handleLogosWebhook = async (block) => {
-  if (block.type === "RequestBlock") {
-    let prevRequestBatch = await blocks.getRequestBlock(block.previous)
-    if (block.previous !== EMPTYHEX && prevRequestBatch) {
-      block.prevHash = block.previous
-    }
-    blocks.createRequestBlock(block).then(async (requestBlock) => {
-      publish(`requestBlock/${block.delegate}`, block)
-      for (let request of block.requests) {
-        request.timestamp = block.timestamp
-        publish(`request/${request.hash}`, request)
-        request.requestBlockHash = block.hash
-        let prevRequest = await blocks.getRequest(request.previous) 
-        if (request.previous !== EMPTYHEX && prevRequest) {
-          request.prevHash = request.previous
-        }
-        blocks.createRequest(request).then((dbBlock) => {
-          publish(`account/${request.origin}`, request)
-          if (request.type === 'send' && request.transactions) {
-            for (let transaction of request.transactions) {
-              transaction.requestHash = request.hash
-              blocks.createSend(transaction).then((dbSend) => {
-                publish(`account/${transaction.destination}`, request)
-              })
-            }
-          }
-        }).catch((err) => {
-          console.log(err)
-        })
-      }
-    }).catch((err) => {
-      console.log(err)
-    })
-  } else if (block.type === "MicroBlock") {
-    let prevMicroEpoch = await blocks.getMicroEpoch(block.previous)
-    if (block.previous !== EMPTYHEX && prevMicroEpoch) {
-      block.prevHash = block.previous
-    }
-    blocks.createMicroEpoch(block).then(async (microEpoch) => {
-      for (let tip of block.tips) {
-        let requestBlockTip = await blocks.getRequestBlock(tip)
-        if (tip !== EMPTYHEX && requestBlockTip) {
-          requestBlockTip.update({
-            microEpochHash: block.hash
-          })
-        }
-      }
-      publish(`microEpoch`, block)
-    }).catch((err) => {
-      console.log(err)
-    })
-  } else if (block.type === "Epoch") {
-    let prevEpoch = await blocks.getEpoch(block.previous)
-    if (block.previous !== EMPTYHEX && prevEpoch) {
-      block.prevHash = block.previous
-    }
-    blocks.createEpoch(block).then(async (epoch) => {
-      publish(`epoch`, block)
-      let microEpoch = await blocks.getMicroEpoch(block.micro_block_tip)
-      if (block.micro_block_tip !== EMPTYHEX && microEpoch) {
-        microEpoch.update({
-          microBlockTipHash: block.hash
-        })
-      }
-      for (let delegate of block.delegates) {
-        delegate.epochHash = block.hash
-        blocks.createDelegate(delegate).then().catch((err) => {
-          console.log(err)
-        })
-      }
-    }).catch((err) => {
-      console.log(err)
-    })
-  }
-}
 
 // Static routes
 app.use(history())
@@ -280,9 +201,8 @@ const handleAppExit = (options, err) => {
   }
   if (options.cleanup) {
     console.log('Cleaning up...')
-    if (mqttClient) {
-      mqttClient.end(true)
-    }
+    mqtt.endClient()
+
   }
   if (options.exit) {
     console.log('Calling exit...')
@@ -322,7 +242,7 @@ models.epoch.hasOne(models.microEpoch, {as: 'microBlockTip'})
 
 models.sequelize.sync().then(() => {
   configureSignals()
-  connectMQTT()
+  mqtt.initMQTTClient()
   app.listen(config.system.port)
   wallet.createAccount({
     privateKey: config.faucetPrivateKey

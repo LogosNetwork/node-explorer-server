@@ -1,9 +1,9 @@
 let methods = {}
 const models = require('../models')
-const Sequelize = require('sequelize');
-const Op = Sequelize.Op;
+const Sequelize = require('sequelize')
+const Op = Sequelize.Op
 
-methods.createRequestBlock = (data) => {
+methods.createRequestBlock = data => {
   return new Promise((resolve, reject) => {
     models.requestBlock
       .findOrCreate({
@@ -26,7 +26,7 @@ methods.createRequestBlock = (data) => {
       })
   })
 }
-methods.createRequest = (data) => {
+methods.createRequest = data => {
   return new Promise((resolve, reject) => {
     models.request
     .findOrCreate({
@@ -49,7 +49,7 @@ methods.createRequest = (data) => {
     })
   })
 }
-methods.createDelegate = (data) => {
+methods.createDelegate = data => {
   return new Promise((resolve, reject) => {
     models.delegate
     .findOrCreate({
@@ -72,7 +72,7 @@ methods.createDelegate = (data) => {
     })
   })
 }
-methods.createSend = (data) => {
+methods.createSend = data => {
   return new Promise((resolve, reject) => {
     models.send
     .create(data)
@@ -84,7 +84,7 @@ methods.createSend = (data) => {
     })
   })
 }
-methods.createMicroEpoch = (data) => {
+methods.createMicroEpoch = data => {
   return new Promise((resolve, reject) => {
     models.microEpoch
     .findOrCreate({
@@ -131,7 +131,7 @@ methods.createEpoch = (data) => {
   })
 }
 
-methods.findMostRecentRequestBlock = (data) => {
+methods.findMostRecentRequestBlock = () => {
   return new Promise((resolve, reject) => {
     models.requestBlock
       .findAll(
@@ -154,7 +154,7 @@ methods.findMostRecentRequestBlock = (data) => {
   })
 }
 
-methods.getRequestBlock = (hash) => {
+methods.getRequestBlock = hash => {
   return new Promise((resolve, reject) => {
     models.requestBlock
       .findOne(
@@ -171,7 +171,7 @@ methods.getRequestBlock = (hash) => {
   })
 }
 
-methods.getRequest = (hash) => {
+methods.getRequest = hash => {
   return new Promise((resolve, reject) => {
     models.request
       .findOne(
@@ -188,7 +188,7 @@ methods.getRequest = (hash) => {
   })
 }
 
-methods.getMicroEpoch = (hash) => {
+methods.getMicroEpoch = hash => {
   return new Promise((resolve, reject) => {
     models.microEpoch
       .findOne(
@@ -205,7 +205,7 @@ methods.getMicroEpoch = (hash) => {
   })
 }
 
-methods.getEpoch = (hash) => {
+methods.getEpoch = hash => {
   return new Promise((resolve, reject) => {
     models.epoch
       .findOne(
