@@ -475,11 +475,7 @@ methods.requests = (previousDate = null, count = 50) => {
           order: [
             ['createdAt', 'DESC']
           ],
-          limit:count,
-          include: [{
-            model: models.send,
-            as: 'transactions'
-          }]
+          limit:count
         }
       )
       .then((requests) => {
