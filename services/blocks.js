@@ -2,7 +2,224 @@ let methods = {}
 const models = require('../models')
 const Sequelize = require('sequelize')
 const Op = Sequelize.Op
-
+const bigInt = require('big-integer')
+const tokenSettings = [
+  'issuance',
+  'modify_issuance',
+  'revoke',
+  'modify_revoke',
+  'freeze',
+  'modify_freeze',
+  'adjust_fee',
+  'modify_adjust_fee',
+  'whitelist',
+  'modify_whitelist'
+]
+methods.createToken = data => {
+  return new Promise((resolve, reject) => {
+    models.token
+    .create(data)
+    .then((send) => {
+      resolve(send)
+    })
+    .catch((err) => {
+      reject(err)
+    })
+  })
+}
+methods.burnTokens = data => {
+  return new Promise((resolve, reject) => {
+    models.token
+    .findOne({
+      where: {
+        token_id: {
+          [Op.eq]: data.token_id
+        }
+      }
+    })
+    .then((token) => {
+      token.total_supply = bigInt(token.dataValues.total_supply).minus(bigInt(data.amount)).toString()
+      token.save().then(() => {
+        resolve(token)
+      }).catch((err) => {
+        reject(err)
+      })
+    }).catch((err) => {
+      reject(err)
+    })
+  })
+}
+methods.issueTokens = data => {
+  return new Promise((resolve, reject) => {
+    models.token
+    .findOne({
+      where: {
+        token_id: {
+          [Op.eq]: data.token_id
+        }
+      }
+    })
+    .then((token) => {
+      token.total_supply = bigInt(token.dataValues.total_supply).plus(bigInt(data.amount)).toString()
+      token.save().then(() => {
+        resolve(token)
+      }).catch((err) => {
+        reject(err)
+      })
+    }).catch((err) => {
+      reject(err)
+    })
+  })
+}
+methods.adjustTokenFee = data => {
+  return new Promise((resolve, reject) => {
+    models.token
+    .findOne({
+      where: {
+        token_id: {
+          [Op.eq]: data.token_id
+        }
+      }
+    })
+    .then((token) => {
+      token.token_fee = data.token_fee
+      token.token_rate = data.token_rate
+      token.save().then(() => {
+        resolve(token)
+      }).catch((err) => {
+        reject(err)
+      })
+    }).catch((err) => {
+      reject(err)
+    })
+  })
+}
+methods.updateTokenInfo = data => {
+  return new Promise((resolve, reject) => {
+    models.token
+    .findOne({
+      where: {
+        token_id: {
+          [Op.eq]: data.token_id
+        }
+      }
+    })
+    .then((token) => {
+      token.issuer_info = data.new_info
+      token.save().then(() => {
+        resolve(token)
+      }).catch((err) => {
+        reject(err)
+      })
+    }).catch((err) => {
+      reject(err)
+    })
+  })
+}
+methods.changeTokenSetting = data => {
+  return new Promise((resolve, reject) => {
+    models.token
+    .findOne({
+      where: {
+        token_id: {
+          [Op.eq]: data.token_id
+        }
+      }
+    })
+    .then((token) => {
+      let settings = token.dataValues.settings
+      if (data.value === "false") {
+        let newSettings = settings.filter(setting => {
+          return setting !== data.setting
+        })
+        token.settings = newSettings
+        token.save().then(() => {
+          resolve(token)
+        }).catch((err) => {
+          reject(err)
+        })
+      } else if (data.value === "true") {
+        let newSettings = tokenSettings.filter(setting => {
+          return settings.indexOf(setting) !== -1 || setting === newSetting
+        })
+        token.settings = newSettings
+        token.save().then(() => {
+          resolve(token)
+        }).catch((err) => {
+          reject(err)
+        })
+      }
+    }).catch((err) => {
+      reject(err)
+    })
+  })
+}
+methods.immuteTokenSetting = data => {
+  return new Promise((resolve, reject) => {
+    models.token
+    .findOne({
+      where: {
+        token_id: {
+          [Op.eq]: data.token_id
+        }
+      }
+    })
+    .then((token) => {
+      let settings = token.dataValues.settings
+      let immuteSetting = "modify_"+data.setting
+      let newSettings = settings.filter(setting => {
+        return setting !== immuteSetting
+      })
+      token.settings = newSettings
+      token.save().then(() => {
+        resolve(token)
+      }).catch((err) => {
+        reject(err)
+      })
+    }).catch((err) => {
+      reject(err)
+    })
+  })
+}
+methods.updateTokenController = data => {
+  return new Promise((resolve, reject) => {
+    models.token
+    .findOne({
+      where: {
+        token_id: {
+          [Op.eq]: data.token_id
+        }
+      }
+    })
+    .then((token) => {
+      let controllers = token.dataValues.controllers
+      if (data.action === 'remove') {
+        let newControllers = controllers.filter(controller => {
+          return controller.account !== data.controller.account
+        })
+        token.controllers = newControllers
+        token.save().then(() => {
+          resolve(token)
+        }).catch((err) => {
+          reject(err)
+        })
+      } else if (data.action === 'true') {
+        let newControllers = controllers.filter(controller => {
+          return controller.account !== data.controller.account
+        })
+        newControllers.push(data.controller)
+        token.controllers = newControllers
+        token.save().then(() => {
+          resolve(token)
+        }).catch((err) => {
+          reject(err)
+        })
+      }
+    }).catch((err) => {
+      reject(err)
+    })
+  })
+}
 methods.createRequestBlock = data => {
   return new Promise((resolve, reject) => {
     models.requestBlock
@@ -66,18 +283,6 @@ methods.createDelegate = data => {
       } else {
         reject("Record already exists!")
       }
-    })
-    .catch((err) => {
-      reject(err)
-    })
-  })
-}
-methods.createSend = data => {
-  return new Promise((resolve, reject) => {
-    models.send
-    .create(data)
-    .then((send) => {
-      resolve(send)
     })
     .catch((err) => {
       reject(err)

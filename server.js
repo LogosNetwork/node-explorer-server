@@ -223,7 +223,6 @@ const configureSignals = () => {
 }
 
 // Database
-models.request.hasMany(models.send, {as: 'transactions'})
 models.request.hasOne(models.request, {as: 'prev'})
 models.request.hasOne(models.request, {as: 'next'})
 

@@ -25,19 +25,17 @@ module.exports = (sequelize, DataTypes) => {
       require: true
     },
     settings: {
-      type: DataTypes.STRING,
-      require: true,
-      get() {
-        return this.getDataValue('settings').split(',')
-      },
-      set(val) {
-        this.setDataValue('settings', val);
-      }
+      type: DataTypes.JSONB,
+      require: true
+    },
+    controllers: {
+      type: DataTypes.JSONB,
+      require: true
     },
     issuer_info: {
       type: DataTypes.STRING,
       require: true
-    },
+    }
   }, {
     freezeTableName: true
   })

@@ -3,7 +3,8 @@ const mqtt = require('mqtt')
 const config = require('../config.json')
 const blocks = require('./blocks')
 const EMPTYHEX = '0000000000000000000000000000000000000000000000000000000000000000'
-
+const LogosWallet = require('@logosnetwork/logos-webwallet-sdk')
+const Utils = LogosWallet.LogosUtils
 // MQTT Client
 let mqttClient = null
 
@@ -24,59 +25,70 @@ methods.endClient = () => {
   }
 }
 
-methods.handleMessage = async (request) => {
-  if (request.type === "RequestBlock") {
-    let prevRequestBatch = await blocks.getRequestBlock(request.previous)
-    if (request.previous !== EMPTYHEX && prevRequestBatch) {
-      request.prevHash = request.previous
+methods.handleMessage = async (mqttMessage) => {
+  if (mqttMessage.type === "RequestBlock") {
+    let prevRequestBatch = await blocks.getRequestBlock(mqttMessage.previous)
+    if (mqttMessage.previous !== EMPTYHEX && prevRequestBatch) {
+      mqttMessage.prevHash = mqttMessage.previous
     }
-    blocks.createRequestBlock(request).then(async (requestBlock) => {
-      publish(`requestBlock/${request.delegate}`, request)
-      for (let request of request.requests) {
+    blocks.createRequestBlock(mqttMessage).then(async (requestBlock) => {
+      publish(`requestBlock/${mqttMessage.delegate}`, mqttMessage)
+      for (let request of mqttMessage.requests) {
         request.timestamp = request.timestamp
         publish(`request/${request.hash}`, request)
-        request.requestBlockHash = request.hash
+        request.requestBlockHash = mqttMessage.hash
         let prevRequest = await blocks.getRequest(request.previous) 
         if (request.previous !== EMPTYHEX && prevRequest) {
           request.prevHash = request.previous
         }
         blocks.createRequest(request).then((dbBlock) => {
+          // Broadcast the request to the origin and token account
           publish(`account/${request.origin}`, request)
-          if (request.type === 'send' && request.transactions) {
+          if (request.token_id) publish(`account/${Utils.accountFromHexKey(request.token_id)}`)
+          
+          // Handle Database Request Types
+          if ((request.type === 'send' || request.type === 'token_send') && request.transactions) {
             for (let transaction of request.transactions) {
-              transaction.requestHash = request.hash
-              blocks.createSend(transaction).then((dbSend) => {
+              if (request.type === 'send' && request.origin !== transaction.destination) {
                 publish(`account/${transaction.destination}`, request)
-              })
+              } else if (request.type === 'token_send' &&
+                request.origin !== transaction.destination &&
+                request.token_id !== transaction.destination) {
+                publish(`account/${transaction.destination}`, request)
+              }
             }
           } else if (request.type === 'change') {
             // Not yet implemented
           } else if (request.type === 'issuance') {
-            // Kill me
+            blocks.createToken(request)
           } else if (request.type === 'issue_additional') {
-            
+            blocks.issueTokens(request)
           } else if (request.type === 'change_setting') {
-            
+            blocks.changeTokenSetting(request)
           } else if (request.type === 'immute_setting') {
-
-          } else if (request.type === 'revoke') {
-
-          } else if (request.type === 'adjust_user_status') {
-
+            blocks.immuteTokenSetting(request)
+          } else if ((request.type === 'revoke' || request.type === 'withdraw_fee' || request.type === 'distribute') && request.transaction) {
+            if (request.origin !== transaction.destination &&
+              request.token_id !== transaction.destination) {
+              publish(`account/${transaction.destination}`, request)
+            }
+          } else if (request.type === 'adjust_user_status' && request.account) {
+            if (request.origin !== transaction.destination &&
+              request.token_id !== transaction.destination) {
+              publish(`account/${transaction.account}`, request)
+            }
           } else if (request.type === 'adjust_fee') {
-
+            blocks.adjustTokenFee(request)
           } else if (request.type === 'update_issuer_info') {
-
+            blocks.updateTokenInfo(request)
           } else if (request.type === 'update_controller') {
-
+            if (request.origin !== transaction.destination &&
+              request.token_id !== transaction.destination) {
+              publish(`account/${request.controller.account}`, request)
+            }
+            blocks.updateTokenController(request)
           } else if (request.type === 'burn') {
-
-          } else if (request.type === 'distribute') {
-
-          } else if (request.type === 'withdraw_fee') {
-
-          } else if (request.type === 'token_send') {
-
+            blocks.burnTokens(request)
           }
         }).catch((err) => {
           console.log(err)
@@ -85,39 +97,39 @@ methods.handleMessage = async (request) => {
     }).catch((err) => {
       console.log(err)
     })
-  } else if (request.type === "MicroBlock") {
-    let prevMicroEpoch = await blocks.getMicroEpoch(request.previous)
-    if (request.previous !== EMPTYHEX && prevMicroEpoch) {
-      request.prevHash = request.previous
+  } else if (mqttMessage.type === "MicroBlock") {
+    let prevMicroEpoch = await blocks.getMicroEpoch(mqttMessage.previous)
+    if (mqttMessage.previous !== EMPTYHEX && prevMicroEpoch) {
+      mqttMessage.prevHash = mqttMessage.previous
     }
-    blocks.createMicroEpoch(request).then(async (microEpoch) => {
-      for (let tip of request.tips) {
+    blocks.createMicroEpoch(mqttMessage).then(async (microEpoch) => {
+      for (let tip of mqttMessage.tips) {
         let requestBlockTip = await blocks.getRequestBlock(tip)
         if (tip !== EMPTYHEX && requestBlockTip) {
           requestBlockTip.update({
-            microEpochHash: request.hash
+            microEpochHash: mqttMessage.hash
           })
         }
       }
-      publish(`microEpoch`, request)
+      publish(`microEpoch`, mqttMessage)
     }).catch((err) => {
       console.log(err)
     })
-  } else if (request.type === "Epoch") {
-    let prevEpoch = await blocks.getEpoch(request.previous)
-    if (request.previous !== EMPTYHEX && prevEpoch) {
-      request.prevHash = request.previous
+  } else if (mqttMessage.type === "Epoch") {
+    let prevEpoch = await blocks.getEpoch(mqttMessage.previous)
+    if (mqttMessage.previous !== EMPTYHEX && prevEpoch) {
+      mqttMessage.prevHash = mqttMessage.previous
     }
-    blocks.createEpoch(request).then(async (epoch) => {
-      publish(`epoch`, request)
-      let microEpoch = await blocks.getMicroEpoch(request.micro_block_tip)
-      if (request.micro_block_tip !== EMPTYHEX && microEpoch) {
+    blocks.createEpoch(mqttMessage).then(async (epoch) => {
+      publish(`epoch`, mqttMessage)
+      let microEpoch = await blocks.getMicroEpoch(mqttMessage.micro_block_tip)
+      if (mqttMessage.micro_block_tip !== EMPTYHEX && microEpoch) {
         microEpoch.update({
-          microBlockTipHash: request.hash
+          microBlockTipHash: mqttMessage.hash
         })
       }
-      for (let delegate of request.delegates) {
-        delegate.epochHash = request.hash
+      for (let delegate of mqttMessage.delegates) {
+        delegate.epochHash = mqttMessage.hash
         blocks.createDelegate(delegate).then().catch((err) => {
           console.log(err)
         })
