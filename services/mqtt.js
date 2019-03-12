@@ -34,7 +34,7 @@ methods.handleMessage = async (mqttMessage) => {
     blocks.createRequestBlock(mqttMessage).then(async (requestBlock) => {
       publish(`requestBlock/${mqttMessage.delegate}`, mqttMessage)
       for (let request of mqttMessage.requests) {
-        request.timestamp = request.timestamp
+        request.timestamp = mqttMessage.timestamp
         publish(`request/${request.hash}`, request)
         request.requestBlockHash = mqttMessage.hash
         let prevRequest = await blocks.getRequest(request.previous) 
@@ -48,13 +48,19 @@ methods.handleMessage = async (mqttMessage) => {
           
           // Handle Database Request Types
           if ((request.type === 'send' || request.type === 'token_send') && request.transactions) {
+            let publishedAccounts = []
             for (let transaction of request.transactions) {
-              if (request.type === 'send' && request.origin !== transaction.destination) {
-                publish(`account/${transaction.destination}`, request)
+              if (request.type === 'send' &&
+                request.origin !== transaction.destination &&
+                !publishedAccounts.includes(transaction.destination)) {
+                  publish(`account/${transaction.destination}`, request)
+                  publishedAccounts.push(transaction.destination)
               } else if (request.type === 'token_send' &&
                 request.origin !== transaction.destination &&
-                request.token_id !== transaction.destination) {
-                publish(`account/${transaction.destination}`, request)
+                Utils.accountFromHexKey(request.token_id) !== transaction.destination &&
+                !publishedAccounts.includes(transaction.destination)) {
+                  publish(`account/${transaction.destination}`, request)
+                  publishedAccounts.push(transaction.destination)
               }
             }
           } else if (request.type === 'change') {
@@ -69,12 +75,12 @@ methods.handleMessage = async (mqttMessage) => {
             blocks.immuteTokenSetting(request)
           } else if ((request.type === 'revoke' || request.type === 'withdraw_fee' || request.type === 'distribute') && request.transaction) {
             if (request.origin !== transaction.destination &&
-              request.token_id !== transaction.destination) {
+              Utils.accountFromHexKey(request.token_id) !== transaction.destination) {
               publish(`account/${transaction.destination}`, request)
             }
           } else if (request.type === 'adjust_user_status' && request.account) {
             if (request.origin !== transaction.destination &&
-              request.token_id !== transaction.destination) {
+              Utils.accountFromHexKey(request.token_id) !== transaction.destination) {
               publish(`account/${transaction.account}`, request)
             }
           } else if (request.type === 'adjust_fee') {
@@ -83,7 +89,7 @@ methods.handleMessage = async (mqttMessage) => {
             blocks.updateTokenInfo(request)
           } else if (request.type === 'update_controller') {
             if (request.origin !== transaction.destination &&
-              request.token_id !== transaction.destination) {
+              Utils.accountFromHexKey(request.token_id) !== transaction.destination) {
               publish(`account/${request.controller.account}`, request)
             }
             blocks.updateTokenController(request)
