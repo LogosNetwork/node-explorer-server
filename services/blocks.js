@@ -505,4 +505,43 @@ methods.requests = (previousDate = null, count = 50) => {
   })
 }
 
+methods.tokens = (previousDate = null, count = 50) => {
+  return new Promise((resolve, reject) => {
+    if (previousDate === null) {
+      models.token
+      .findAll(
+        {
+          order: [
+            ['createdAt', 'DESC']
+          ],
+          limit:count
+        }
+      )
+      .then((tokens) => {
+        if (!tokens) { return reject('Could not get any tokens') }
+        resolve(tokens)
+      })
+      .catch((err) => { return reject(err) })
+    } else {
+      models.token
+      .findAll(
+        {
+          where: {
+            createdAt: { [Op.lt]: previousDate }
+          },
+          order: [
+            ['createdAt', 'DESC']
+          ],
+          limit:count
+        }
+      )
+      .then((tokens) => {
+        if (!tokens) { return reject('Could not get any tokens') }
+        resolve(tokens)
+      })
+      .catch((err) => { return reject(err) })
+    }
+  })
+}
+
 module.exports = methods

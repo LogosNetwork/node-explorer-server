@@ -14,6 +14,7 @@ const redis = require('redis')
 const mosca = require('mosca')
 const mqtt = require('./services/mqtt')
 const blockRoutes = require('./routes/blocks')
+const tokenRoutes = require('./routes/tokens')
 const Logos = require('@logosnetwork/logos-rpc-client')
 const LogosWallet = require('@logosnetwork/logos-webwallet-sdk')
 const Wallet = LogosWallet.Wallet
@@ -111,6 +112,7 @@ app.get('/reset', (req, res) => {
   }
 })
 app.use('/blocks', blockRoutes)
+app.use('/tokens', tokenRoutes)
 
 // MQTT SERVER
 const mqttServerOpts = {
