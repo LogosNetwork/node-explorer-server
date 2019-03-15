@@ -44,7 +44,7 @@ methods.handleMessage = async (mqttMessage) => {
         blocks.createRequest(request).then((dbBlock) => {
           // Broadcast the request to the origin and token account
           publish(`account/${request.origin}`, request)
-          if (request.token_id) publish(`account/${Utils.accountFromHexKey(request.token_id)}`)
+          if (request.token_id) publish(`account/${Utils.accountFromHexKey(request.token_id)}`, request)
           
           // Handle Database Request Types
           if ((request.type === 'send' || request.type === 'token_send') && request.transactions) {
@@ -74,22 +74,22 @@ methods.handleMessage = async (mqttMessage) => {
           } else if (request.type === 'immute_setting') {
             blocks.immuteTokenSetting(request)
           } else if ((request.type === 'revoke' || request.type === 'withdraw_fee' || request.type === 'distribute') && request.transaction) {
-            if (request.origin !== transaction.destination &&
-              Utils.accountFromHexKey(request.token_id) !== transaction.destination) {
-              publish(`account/${transaction.destination}`, request)
+            if (request.origin !== request.transaction.destination &&
+              Utils.accountFromHexKey(request.token_id) !== request.transaction.destination) {
+              publish(`account/${request.transaction.destination}`, request)
             }
           } else if (request.type === 'adjust_user_status' && request.account) {
-            if (request.origin !== transaction.destination &&
-              Utils.accountFromHexKey(request.token_id) !== transaction.destination) {
-              publish(`account/${transaction.account}`, request)
+            if (request.origin !== request.transaction.destination &&
+              Utils.accountFromHexKey(request.token_id) !== request.transaction.destination) {
+              publish(`account/${request.transaction.account}`, request)
             }
           } else if (request.type === 'adjust_fee') {
             blocks.adjustTokenFee(request)
           } else if (request.type === 'update_issuer_info') {
             blocks.updateTokenInfo(request)
           } else if (request.type === 'update_controller') {
-            if (request.origin !== transaction.destination &&
-              Utils.accountFromHexKey(request.token_id) !== transaction.destination) {
+            if (request.origin !== request.transaction.destination &&
+              Utils.accountFromHexKey(request.token_id) !== request.transaction.destination) {
               publish(`account/${request.controller.account}`, request)
             }
             blocks.updateTokenController(request)
