@@ -3,9 +3,7 @@ const express = require('express')
 const config = require('./config.json')
 const app = express()
 const bodyParser = require('body-parser')
-const colog = require('colog')
 const path = require('path')
-const moment = require('moment')
 const models = require('./models')
 const axios = require('axios')
 const gzipStatic = require('connect-gzip-static')
@@ -185,16 +183,6 @@ mqttServer.on('published', function (packet, client) {
 // Static routes
 app.use(history())
 app.use(gzipStatic(path.join(__dirname, '/node-explorer-client/dist')))
-
-// Debug Logging
-app.use((req, res, next) => {
-  if (config.debug) {
-    colog.log(colog.color(moment().format('YYYY-MM-DD HH:mm:ss') + ' - ', 'cyan') +
-      colog.color(req.headers['x-forwarded-for'] || req.connection.remoteAddress, 'cyan') +
-      ' - ' + colog.inverse(req.method) + ' - ' + colog.bold(req.url))
-  }
-  next()
-})
 
 // Want to notify before shutting down
 const handleAppExit = (options, err) => {

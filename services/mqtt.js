@@ -73,7 +73,7 @@ methods.handleMessage = async (mqttMessage) => {
             blocks.changeTokenSetting(request)
           } else if (request.type === 'immute_setting') {
             blocks.immuteTokenSetting(request)
-          } else if ((request.type === 'revoke' || request.type === 'withdraw_fee' || request.type === 'distribute') && request.transaction) {
+          } else if ((request.type === 'revoke' || request.type === 'withdraw_fee' || request.type === 'distribute' || request.type === 'withdraw_logos') && request.transaction) {
             if (request.origin !== request.transaction.destination &&
               Utils.accountFromHexKey(request.token_id) !== request.transaction.destination) {
               publish(`account/${request.transaction.destination}`, request)
@@ -143,17 +143,6 @@ methods.handleMessage = async (mqttMessage) => {
     }).catch((err) => {
       console.log(err)
     })
-  }
-}
-
-methods.handleRequestBlock = request => {
-  if (request.type === 'send' && request.transactions) {
-    for (let transaction of request.transactions) {
-      transaction.requestHash = request.hash
-      blocks.createSend(transaction).then((dbSend) => {
-        publish(`account/${transaction.destination}`, request)
-      })
-    }
   }
 }
 
