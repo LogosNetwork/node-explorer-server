@@ -26,7 +26,6 @@ const wallet = new Wallet({
   rpc: rpc,
   mqtt: 'ws:localhost:8883'
 })
-const RPC = new Logos({ url: `http://${config.delegates[0]}:55000`, debug: false })
 const bigInt = require('big-integer')
 const session = require('express-session')
 const RedisStore = require('connect-redis')(session)
@@ -71,7 +70,7 @@ app.post('/faucet', async (req, res) => {
     let val = wallet.account.pendingBalance
     let logosAmount = 0
     let bal = bigInt(val).divide(10000)
-    bal = Number(RPC.convert.fromReason(bal, 'LOGOS'))
+    bal = Number(Logos.convert.fromReason(bal, 'LOGOS'))
     if (bal > (1000)) {
       logosAmount = 1000
     } else {
@@ -79,7 +78,7 @@ app.post('/faucet', async (req, res) => {
     }
     let block = await wallet.account.createSendRequest([{
       destination: req.body.address,
-      amount: RPC.convert.toReason(logosAmount, 'LOGOS')
+      amount: Logos.convert.toReason(logosAmount, 'LOGOS')
     }])
     res.send({
       msg: `Faucet has published sent request of ${logosAmount} Logos to ${req.body.address}`,
