@@ -4,7 +4,7 @@ const config = require('../config.json')
 const blocks = require('./blocks')
 const EMPTYHEX = '0000000000000000000000000000000000000000000000000000000000000000'
 const LogosWallet = require('@logosnetwork/logos-webwallet-sdk')
-const Utils = LogosWallet.LogosUtils
+const Utils = LogosWallet.Utils
 // MQTT Client
 let mqttClient = null
 
