@@ -24,7 +24,7 @@ const wallet = new Wallet({
   password: 'password',
   fullSync: false,
   rpc: rpc,
-  mqtt: 'ws:localhost:8883'
+  mqtt: 'ws:localhost'
 })
 const bigInt = require('big-integer')
 const session = require('express-session')
