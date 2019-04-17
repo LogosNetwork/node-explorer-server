@@ -109,7 +109,7 @@ app.get('/reset', (req, res) => {
   }
 })
 app.use('/blocks', blockRoutes)
-app.use('/tokens', tokenRoutes)
+app.use('/api/tokens', tokenRoutes)
 
 // MQTT SERVER
 const mqttServerOpts = {
