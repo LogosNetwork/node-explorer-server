@@ -88,8 +88,8 @@ methods.handleMessage = async (mqttMessage) => {
           } else if (request.type === 'update_issuer_info') {
             blocks.updateTokenInfo(request)
           } else if (request.type === 'update_controller') {
-            if (request.origin !== request.transaction.destination &&
-              Utils.accountFromHexKey(request.token_id) !== request.transaction.destination) {
+            if (request.origin !== request.controller.account &&
+              Utils.accountFromHexKey(request.token_id) !== request.controller.account) {
               publish(`account/${request.controller.account}`, request)
             }
             blocks.updateTokenController(request)
