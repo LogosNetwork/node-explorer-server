@@ -5,9 +5,23 @@ const blocks = require('./blocks')
 const EMPTYHEX = '0000000000000000000000000000000000000000000000000000000000000000'
 const LogosWallet = require('@logosnetwork/logos-webwallet-sdk')
 const Utils = LogosWallet.Utils
+const Logos = require('@logosnetwork/logos-rpc-client')
+const CronJob = require('cron').CronJob
+const moment = require('moment')
+const isEqual = require('lodash.isequal');
+let currentDelegates = null
+let nextDelegates = null
+let cron = null
+let playHooky = false
+let options = {
+  url: `http://${config.rpcNodeURL}:55000`
+}
+if (config.proxyURL) {
+  options.proxyURL = config.proxyURL
+}
+const RPC = new Logos(options)
 // MQTT Client
 let mqttClient = null
-
 const publish = (topic, payload) => {
   mqttClient.publish(topic, JSON.stringify(payload), config.mqtt.block.opts)
 }
@@ -97,11 +111,11 @@ methods.handleMessage = async (mqttMessage) => {
             blocks.burnTokens(request)
           }
         }).catch((err) => {
-          console.log(err)
+          // console.log(err)
         })
       }
     }).catch((err) => {
-      console.log(err)
+      // console.log(err)
     })
   } else if (mqttMessage.type === "MicroBlock") {
     let prevMicroEpoch = await blocks.getMicroEpoch(mqttMessage.previous)
@@ -119,7 +133,7 @@ methods.handleMessage = async (mqttMessage) => {
       }
       publish(`microEpoch`, mqttMessage)
     }).catch((err) => {
-      console.log(err)
+      // console.log(err)
     })
   } else if (mqttMessage.type === "Epoch") {
     let prevEpoch = await blocks.getEpoch(mqttMessage.previous)
@@ -127,6 +141,7 @@ methods.handleMessage = async (mqttMessage) => {
       mqttMessage.prevHash = mqttMessage.previous
     }
     blocks.createEpoch(mqttMessage).then(async (epoch) => {
+      methods.getDelegates(true)
       publish(`epoch`, mqttMessage)
       let microEpoch = await blocks.getMicroEpoch(mqttMessage.micro_block_tip)
       if (mqttMessage.micro_block_tip !== EMPTYHEX && microEpoch) {
@@ -134,15 +149,118 @@ methods.handleMessage = async (mqttMessage) => {
           microBlockTipHash: mqttMessage.hash
         })
       }
-      for (let delegate of mqttMessage.delegates) {
-        delegate.epochHash = mqttMessage.hash
-        blocks.createDelegate(delegate).then().catch((err) => {
-          console.log(err)
+      for (let messageDelegate of mqttMessage.delegates) {
+        messageDelegate.epochHash = mqttMessage.hash
+        blocks.createDelegate(messageDelegate).then().catch((err) => {
+          // console.log(err)
         })
       }
     }).catch((err) => {
-      console.log(err)
+      // console.log(err)
     })
+  }
+}
+
+methods.currentDelegates = () => {
+  return currentDelegates
+}
+
+methods.nextDelegates = () => {
+  return nextDelegates
+}
+
+methods.getDelegates = async (force = false) => {
+  let delegates = null
+  if (currentDelegates && !force) {
+    delegates = currentDelegates
+  } else {
+    delegates = await methods.requestCurrentDelegates()
+  }
+  let futureDelegates = null
+  if (nextDelegates && !force) {
+    futureDelegates = nextDelegates
+  } else {
+    futureDelegates = await methods.requestFutureDelegates()
+  }
+  if (!currentDelegates) currentDelegates = delegates
+  if (!nextDelegates) nextDelegates = futureDelegates
+  if (!isEqual(currentDelegates, delegates)) {
+    console.warn('Epoch triggered new current delegate list / Cron must of failed')
+    currentDelegates = delegates
+    publish(`delegateChange`, currentDelegates)
+  }
+  if (!isEqual(nextDelegates, futureDelegates)) {
+    console.warn('Epoch triggered new future delegate list / Cron must of failed')
+    nextDelegates = futureDelegates
+  }
+
+  return {
+    current: delegates,
+    next: futureDelegates
+  }
+}
+
+methods.requestCurrentDelegates = async () => {
+  delegates = await RPC.epochs.delegateIPs()
+  for (let index in delegates) {
+    delegates[index] = config.potentialDelegates[delegates[index]['ip']]
+  }
+  return delegates
+}
+
+methods.requestFutureDelegates = async () => {
+  futureDelegates = await RPC.epochs.delegateIPs('next')
+  for (let index in futureDelegates) {
+    futureDelegates[index] = config.potentialDelegates[futureDelegates[index]['ip']]
+  }
+  return futureDelegates
+}
+
+const createEpochCron = () => {
+  return new CronJob('59 11,23 * * *', () => {
+    if (!playHooky) {
+      setTimeout(async () => {
+        if (nextDelegates === null) {
+          nextDelegates = await methods.requestFutureDelegates
+        }
+        if (!isEqual(currentDelegates, nextDelegates)) {
+          methods.publish(`delegateChange`, nextDelegates)
+        }
+        currentDelegates = nextDelegates
+        nextDelegates = null
+      }, 30000)
+    } else {
+      playHooky = false
+    }
+  }, null, true, 'UTC')
+}
+
+methods.initalizeEpochTimers = async () => {
+  cron = createEpochCron()
+  let latestEpochs = await RPC.epochs.history(1)
+  if (latestEpochs.epochs[0].timestamp === '0') {
+    if (config.startTime) {
+      let firstEpochTime = moment.unix(config.startTime)
+      firstEpochTime.utc()
+      firstEpochTime.second(0)
+      firstEpochTime.minute(0)
+      if (firstEpochTime.hour() >= 12) {
+        firstEpochTime.add(1, 'd')
+        firstEpochTime.hour(0)
+      } else {
+        firstEpochTime.hour(12)
+      }
+      playHooky = moment().isBefore(firstEpochTime)
+    } else {
+      console.warn(`No startTime in the config and gensis has just occured! Can't start the epoch timer!`)
+    }
+  }
+  if (cron) {
+    if (playHooky) {
+      console.info(`Skipping One Epoch, Next Epoch At: ${cron.nextDates(2)[1].local().format('ddd, D MMM YYYY h:mma')}`)
+    } else {
+      console.info(`Next Epoch At: ${cron.nextDates(1)[0].local().format('ddd, D MMM YYYY h:mma')}`)
+    }
   }
 }
 

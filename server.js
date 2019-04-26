@@ -15,17 +15,7 @@ const blockRoutes = require('./routes/blocks')
 const tokenRoutes = require('./routes/tokens')
 const Logos = require('@logosnetwork/logos-rpc-client')
 const LogosWallet = require('@logosnetwork/logos-webwallet-sdk')
-const Wallet = LogosWallet.Wallet
-const rpc = {
-  proxy: 'https://pla.bs',
-  delegates: Object.values(config.delegates)
-}
-const wallet = new Wallet({
-  password: 'password',
-  fullSync: false,
-  rpc: rpc,
-  mqtt: 'ws:localhost:8883'
-})
+let faucetWallet = null
 const bigInt = require('big-integer')
 const session = require('express-session')
 const RedisStore = require('connect-redis')(session)
@@ -53,6 +43,7 @@ app.use(bodyParser.urlencoded({ extended: true }))
 
 // Dynamic Routes
 app.post('/callback', (req, res) => {
+  // WARNING: firewall this route to only be able to be hit by a local Logos Node
   mqtt.handleMessage(req.body)
   res.send()
 })
@@ -63,11 +54,12 @@ app.post('/rpc', async (req, res) => {
   res.send(response.data)
 })
 app.get('/delegates', (req, res) => {
-  res.send(config.delegates)
+  res.send(mqtt.currentDelegates())
 })
+
 app.post('/faucet', async (req, res) => {
-  if (req.body.address) {
-    let val = wallet.account.pendingBalance
+  if (req.body.address && faucetWallet) {
+    let val = faucetWallet.account.pendingBalance
     let logosAmount = 0
     let bal = bigInt(val).divide(10000)
     bal = Number(Logos.convert.fromReason(bal, 'LOGOS'))
@@ -76,7 +68,7 @@ app.post('/faucet', async (req, res) => {
     } else {
       logosAmount = Number(bal).toFixed(5)
     }
-    let block = await wallet.account.createSendRequest([{
+    let block = await faucetWallet.account.createSendRequest([{
       destination: req.body.address,
       amount: Logos.convert.toReason(logosAmount, 'LOGOS')
     }])
@@ -84,6 +76,12 @@ app.post('/faucet', async (req, res) => {
       msg: `Faucet has published sent request of ${logosAmount} Logos to ${req.body.address}`,
       hash: block.hash
     })
+  } else {
+    if (req.body.address) {
+      res.send('Faucet Wallet is not connected')
+    } else {
+      res.send('Destination address was not specified')
+    }
   }
 })
 app.get('/manual', (req, res) => {
@@ -228,12 +226,24 @@ models.epoch.hasOne(models.epoch, {as: 'prev'})
 models.epoch.hasOne(models.epoch, {as: 'next'})
 models.epoch.hasOne(models.microEpoch, {as: 'microBlockTip'})
 
-models.sequelize.sync().then(() => {
+models.sequelize.sync().then(async () => {
   configureSignals()
   mqtt.initMQTTClient()
   app.listen(config.system.port)
-  wallet.createAccount({
+  let delegateSets = await mqtt.getDelegates()
+  let options = {
+    password: 'password',
+    fullSync: false,
+    rpc: {
+      delegates: Object.values(delegateSets.current)
+    },
+    mqtt: 'ws:localhost:8883'
+  }
+  if (config.proxyURL) options.rpc.proxy = config.proxyURL
+  faucetWallet = new LogosWallet.Wallet(options)
+  await faucetWallet.createAccount({
     privateKey: config.faucetPrivateKey
   }).catch((err) => console.log(err))
+  mqtt.initalizeEpochTimers()
   console.log('Listening on port: ' + config.system.port)
 })

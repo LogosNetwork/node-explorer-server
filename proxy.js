@@ -16,6 +16,10 @@ app.use((req, res, next) => {
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
+app.get('*', (req, res) => {
+  res.send('The Logos TestNet is being upgraded, come back soon!')
+})
+
 app.post('/rpc', async (req, res) => {
   let targetURL = req.body.targetURL
   delete req.body.targetURL
