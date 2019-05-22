@@ -161,8 +161,13 @@ methods.handleMessage = async (mqttMessage) => {
   }
 }
 
-methods.currentDelegates = () => {
-  return currentDelegates
+methods.currentDelegates = async () => {
+  if (!currentDelegates) {
+    let delegates = await methods.getDelegates()
+    return delegates
+  } else {
+    return currentDelegates
+  }
 }
 
 methods.nextDelegates = () => {

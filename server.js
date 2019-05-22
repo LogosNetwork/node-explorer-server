@@ -53,8 +53,8 @@ app.post('/rpc', async (req, res) => {
   const response = await axios.post(`${targetURL}/`, req.body)
   res.send(response.data)
 })
-app.get('/delegates', (req, res) => {
-  res.send(mqtt.currentDelegates())
+app.get('/delegates', async (req, res) => {
+  res.send(await mqtt.currentDelegates())
 })
 
 app.post('/faucet', async (req, res) => {
