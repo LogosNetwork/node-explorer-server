@@ -17,18 +17,18 @@
   },
   "homepage": "",
   "dependencies": {
-    "@logosnetwork/logos-rpc-client": "^1.1.28",
+    "@logosnetwork/logos-rpc-client": "^1.1.29",
     "@logosnetwork/logos-webwallet-sdk": "^0.1.30",
     "axios": "^0.18.0",
-    "big-integer": "^1.6.41",
+    "big-integer": "^1.6.43",
     "blakejs": "^1.1.0",
     "colog": "^1.0.4",
     "connect-gzip-static": "^2.1.1",
     "connect-history-api-fallback": "^1.6.0",
     "connect-redis": "^3.4.1",
-    "cron": "^1.7.0",
-    "express": "^4.16.4",
-    "express-session": "^1.15.6",
+    "cron": "^1.7.1",
+    "express": "^4.17.1",
+    "express-session": "^1.16.1",
     "lodash.isequal": "^4.5.0",
     "moment": "^2.24.0",
     "mosca": "^2.8.3",
@@ -38,6 +38,6 @@
     "pg": "^6.4.2",
     "pg-hstore": "^2.3.2",
     "redis": "^2.8.0",
-    "sequelize": "^5.8.6"
+    "sequelize": "^5.8.7"
   }
 }
