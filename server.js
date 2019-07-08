@@ -59,7 +59,7 @@ app.get('/delegates', (req, res) => {
 })
 
 app.post('/dns', (req, res) => {
-  let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
+  let ip = req.headers['x-forwarded-for'].split(',')[0]
   dns.nodes(ip).then((response) => {
     res.status(200).json(response)
   }).catch(err => {
