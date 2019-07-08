@@ -11,6 +11,7 @@ const history = require('connect-history-api-fallback')
 const redis = require('redis')
 const mosca = require('mosca')
 const mqtt = require('./services/mqtt')
+const dns = require('./services/dns')
 const blockRoutes = require('./routes/blocks')
 const tokenRoutes = require('./routes/tokens')
 const Logos = require('@logosnetwork/logos-rpc-client')
@@ -55,6 +56,18 @@ app.post('/rpc', async (req, res) => {
 })
 app.get('/delegates', (req, res) => {
   res.send(mqtt.currentDelegates())
+})
+
+app.post('/dns', (req, res) => {
+  let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress
+  dns.nodes(ip).then((response) => {
+    res.status(200).json(response)
+  }).catch(err => {
+    res.status(500).json({
+      status: 'ERROR',
+      message: err.message
+    })
+  })
 })
 
 app.post('/faucet', async (req, res) => {
