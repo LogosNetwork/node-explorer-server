@@ -18,7 +18,7 @@
   "homepage": "",
   "dependencies": {
     "@logosnetwork/logos-rpc-client": "^1.1.29",
-    "@logosnetwork/logos-webwallet-sdk": "^0.2.13",
+    "@logosnetwork/logos-webwallet-sdk": "^0.3.0",
     "axios": "^0.19.0",
     "big-integer": "^1.6.43",
     "blakejs": "^1.1.0",
@@ -38,6 +38,6 @@
     "pg": "^7.11.0",
     "pg-hstore": "^2.3.3",
     "redis": "^2.8.0",
-    "sequelize": "^5.8.7"
+    "sequelize": "^5.11.0"
   }
 }
