@@ -45,6 +45,7 @@ app.use(bodyParser.urlencoded({ extended: true }))
 // Dynamic Routes
 app.post('/callback', (req, res) => {
   // WARNING: firewall this route to only be able to be hit by a local Logos Node
+  // Or implement signing and validating a webhook secret (for example check out stripe)
   mqtt.handleMessage(req.body)
   res.send()
 })
@@ -56,6 +57,15 @@ app.post('/rpc', async (req, res) => {
 })
 app.get('/delegates', (req, res) => {
   res.send(mqtt.currentDelegates())
+})
+
+app.get('/resetdns', (req, res) => {
+  models.node.destroy({
+    where: {},
+    truncate: true
+  }).then(() => {
+    res.send('reseted!')
+  })
 })
 
 app.post('/dns', (req, res) => {
