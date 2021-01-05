@@ -19,7 +19,7 @@
   "dependencies": {
     "@logosnetwork/logos-rpc-client": "^1.1.29",
     "@logosnetwork/logos-webwallet-sdk": "^0.3.0",
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "big-integer": "^1.6.43",
     "blakejs": "^1.1.0",
     "colog": "^1.0.4",
